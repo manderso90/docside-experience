@@ -1,6 +1,6 @@
 # Handoff — the Agent → Seller Seam
 
-> **Status:** v0.1 — spec. The trust-fidelity framing, the invariant set, the
+> **Status:** v0.2 — spec. The trust-fidelity framing, the invariant set, the
 > degradation matrix, and the share-form sequencing are complete. Visual layout of
 > the share surface belongs to screen design.
 > **Derives from:** `information-architecture.md` §3 (the two zones), `trust-doctrine.md`
@@ -62,23 +62,54 @@ set, and the rest of this file is about keeping them alive across degradation.
 
 ---
 
-## 3. The degradation matrix (centerpiece)
+## 3. Form vs. channel — and the degradation matrix
 
-How each invariant survives each share form. The **static PDF column is the hard
-one** — no interactivity, so anything that relied on a tap or hover must become
-*printed*.
+Two things get conflated at the share moment, and separating them is what makes the
+cost of "email it too" legible:
 
-| Invariant | Interactive link (`/share/[token]`) | Static PDF export | Email |
-|---|---|---|---|
-| **Provenance** | tap/expand a value → its §-citation and source snippet | §-citation printed inline ("from §3G(3)") + a source appendix | preview + link; provenance lives in the link |
-| **Corrections** | marker + tap to see original read | "corrected by agent · original: $X" printed beside the value | carried by the link/PDF, not the email body |
-| **Uncertainty** | "couldn't read" / "not specified" rendered distinctly | same two phrasings, printed distinctly — never collapsed to a dash | summarized honestly; detail in link/PDF |
-| **Term-based** | terms, glosses on tap | terms; glosses printed inline or footnoted | terms in preview |
-| **Ranking** *(N>1)* | order + "ranked by: [seller priorities]" + per-offer term explanation | the same, printed; weighting stated, not interactive | order + link to the live comparison |
+- **Form** — what the artifact *is*: a **live link** or a **static PDF**. The form
+  determines which trust affordances are available (a link can respond to a tap; a PDF
+  must print everything).
+- **Channel** — how it *travels*: **SMS** or **email**. The channel is just the
+  envelope. It carries a form; it is not itself a form.
 
-The matrix is also a **build gate**: a share form may not ship until *every*
-invariant has a real cell in its column. A PDF that can't print provenance is not a
-smaller version of the share — it's a doctrine violation wearing the agent's brand.
+The crucial fact: **the link is the universal payload.** It rides SMS and email
+identically. So adding a *channel* (email alongside SMS) costs almost nothing — same
+live link, different envelope — while adding a *form* (a PDF) is the expensive move,
+because a new form must re-earn every invariant below.
+
+### The degradation matrix (centerpiece)
+
+How each invariant survives each **form**. The **static PDF column is the hard one** —
+no interactivity, so anything that relied on a tap or hover must become *printed*.
+
+| Invariant | Live link (form) | Static PDF (form) |
+|---|---|---|
+| **Provenance** | tap/expand a value → its §-citation and source snippet | §-citation printed inline ("from §3G(3)") + a source appendix |
+| **Corrections** | marker + tap to see original read | "corrected by agent · original: $X" printed beside the value |
+| **Uncertainty** | "couldn't read" / "not specified" rendered distinctly | the same two phrasings, printed distinctly — never collapsed to a dash |
+| **Term-based** | terms, glosses on tap | terms; glosses printed inline or footnoted |
+| **Ranking** *(N>1)* | order + "ranked by: [seller priorities]" + per-offer term explanation | the same, printed; weighting stated, not interactive |
+
+The matrix is a **build gate**: a *form* may not ship until *every* invariant has a
+real cell in its column. A PDF that can't print provenance is not a smaller version of
+the share — it's a doctrine violation wearing the agent's brand. **Channels carry no
+gate of their own; they inherit the gate of whatever form they deliver.**
+
+### The delivery model
+
+- **Ship now — the live link, over both channels.** SMS-the-link *and*
+  email-the-link, together. Email is the dominant professional channel; an agent will
+  expect to email what they can text. And an emailed link is doctrinally *better* than
+  a PDF: it stays live, so corrections propagate and nothing goes stale (§5). For most
+  agents this fully satisfies "email them the document."
+- **Defer — the PDF, over either channel.** A savable, printable, forwardable file
+  waits on the static-provenance work the hard column describes. A subset of agents
+  genuinely want a file, so this is a real future *form* — not a no.
+- **Email carries the brand frame better than SMS.** SMS is too terse for the agent's
+  branding and the "call me to discuss" sign-off (copy §1.4, the fourth speaker); an
+  email gives them room to breathe. The brand frame is an argument *for* email, not an
+  afterthought to it.
 
 ---
 
@@ -151,25 +182,30 @@ A shared comparison carries more than a shared summary, and more risk:
 
 ---
 
-## 8. Open decisions
+## 8. Decisions & open questions
 
-- `DECIDE — recommended:` **ship the interactive link first; defer the PDF export**
-  until static-provenance (§3, the hard column) is designed. Rationale: the link
-  preserves every invariant with the least effort and stays current; a PDF cannot
-  ship until it can print provenance without violating the doctrine. The link is
-  also the form the doctrine §3.1 TODO has been waiting on.
-- `DECIDE:` **the link access model.** Tokenized links are viewable by anyone who
-  holds them. Recommend **revocable** links, **comparison links optionally
-  email-gated or expiring** given they carry multiple buyers' terms (§7).
-  Single-summary links can stay lightweight for the alpha. Confirm before share ships.
+- ✅ **DECIDED — ship the live link first, over both SMS and email; defer the PDF.**
+  Both channels carry the same link payload (§3), so email-the-link ships *alongside*
+  SMS-the-link, not after it. The link preserves every invariant with the least effort
+  and stays current; the PDF form waits on the static-provenance work (§3, the hard
+  column) — it's the expensive move and can't ship until it prints provenance without
+  violating the doctrine. *(Recorded as DEC-1 in `11-design-decisions/`.)*
+- `DECIDE — now more pressing:` **the link access model.** Tokenized links are
+  viewable by anyone holding them — and **email makes forwarding the norm**, which
+  turns this from a nicety into a real risk: a forwarded *comparison* link exposes
+  multiple buyers' confidential terms (§7). Recommend **revocable** links, with
+  **comparison links email-gated or expiring**; single-summary links can stay
+  lightweight for the alpha. Confirm before share ships.
 
 ---
 
 ## 9. Deferred (explicit)
 
 - **Visual layout** of the share surface — screen design, citing this file.
-- **PDF export** — deferred until the static-provenance treatment exists (§8).
+- **PDF export** — deferred until the static-provenance treatment exists (§3, §8). It
+  applies to the PDF over *either* channel; it's a new form, not a new channel.
 - **Seller-side interaction** beyond read/trace (questions back to the agent,
   acknowledgments) — post-alpha; the seller zone is read-only for now.
-- **Re-share / forwarding** controls — what happens when a seller forwards the link
-  onward. Real, given §7's leak concern; not scoped here.
+- **Re-share / forwarding** controls — what happens when a recipient forwards the
+  link onward. **More pressing now that email — a forward-native channel — is in
+  scope:** §7's leak concern is no longer hypothetical. Not fully scoped here.
