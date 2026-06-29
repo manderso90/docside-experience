@@ -119,10 +119,18 @@ the moment of open.
 
 ## 2. The state grammar, on screen
 
-All six absence states from states §1 must render **visibly
-distinct** on this surface. The cardinal rule holds at the seller's pixel level: no
-two may look alike. The seller has no correction affordance and no verify step; they
-read what they see. A collapsed distinction here is a permanent lie.
+This surface uses a **surface-adapted state set**, not a literal copy of states §1's
+taxonomy. Two adjustments:
+
+- **Low-confidence is excluded** — it cannot reach this surface. States §1.1 (resolved
+  at verify) means every field is binary by the time a summary is shared: a trusted
+  value or an honest absence. There is no "here's a number that might be wrong" state
+  on this screen.
+- **Agent-corrected is added** — it is a distinct provenance class (doctrine §3.1 v0.5)
+  that *can* reach this surface and must look different from a plain confident value.
+
+The resulting six states that can appear on the share surface, each **visibly distinct** —
+the cardinal rule holds at the seller's pixel level: no two may look alike:
 
 | State | On-screen treatment |
 |---|---|
@@ -142,10 +150,6 @@ read what they see. A collapsed distinction here is a permanent lie.
   corrected value from an extracted one. The correction marker is not a blemish; it
   is provenance class 2 (doctrine §3.1 v0.5). Hiding it would violate non-laundering
   (handoff §6).
-
-**Low-confidence is not a state on this surface.** By the time a summary reaches
-the seller, every field is binary: a trusted value or an honest absence (states
-§1.1). The verify step resolved it. This is not a surface that hedges.
 
 **Free-text fields.** Rendered verbatim, in quotation marks, attributed as the
 buyer's words — not normalized, not paraphrased, never a number lifted from the
@@ -319,8 +323,11 @@ for it — a seller who doesn't tap never gets provenance, which means doctrine 
 v0.2 is only formally satisfied. Option C buries provenance in a secondary action;
 a seller who doesn't find it experiences the same trust gap. Always-visible inline
 citation is the form that actually carries the guarantee to every seller, without
-requiring them to know what they're looking for. It also maps directly to the static
-PDF equivalent (printed inline), which makes the degradation path clean.
+requiring them to know what they're looking for. It also means the citation *can* survive
+into print — a necessary precondition for the static-provenance solution — but this fork
+resolves the live-link surface only. The hard column (handoff §3, static PDF column) still
+requires the source appendix, which is undesigned. The degradation path is cleaner, not
+closed (DEC-3 · handoff §9).
 
 **→ Recorded as DEC-3.**
 

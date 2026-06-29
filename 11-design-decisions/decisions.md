@@ -83,11 +83,19 @@ and read-only, cannot use that mechanism.
 no tap required. Small and subordinate to the value; not hidden behind interaction.
 
 **Consequences.** A seller who wants to trace a value sees exactly which section to look
-for, without needing to know to ask. The citation maps directly to the static PDF equivalent
-(printed inline) from the degradation matrix (handoff §3), making the future PDF path clean.
-Options considered: tap-to-reveal (formally satisfies the guarantee only for sellers who
-already know to tap) and a bottom-of-page "view source" link (buries it; most sellers won't
-find it). Always-visible inline is the only form that delivers provenance to every seller.
+for, without needing to know to ask. Options considered: tap-to-reveal (formally satisfies
+the guarantee only for sellers who already know to tap) and a bottom-of-page "view source"
+link (buries it; most sellers won't find it). Always-visible inline is the only form that
+delivers provenance to every seller.
+
+**What this resolves and what it doesn't.** This decision is for the **live-link surface
+only**, which is the current form (DEC-1). Choosing always-visible inline rather than
+hover-only means the citation *can* survive into print — it is a necessary precondition for
+the static-provenance solution. It does **not** solve the hard column. The degradation matrix
+(handoff §3, static PDF column) requires "§-citation printed inline + source appendix" — the
+source appendix is undesigned and the hard column remains open. The choice made here removes
+one blocker; it does not close the work. The static-provenance problem is deferred to the PDF
+form spec (handoff §9).
 
 ---
 
