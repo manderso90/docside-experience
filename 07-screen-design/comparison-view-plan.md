@@ -1,878 +1,974 @@
-# Plan — The Comparison View (screen-spec Plan 2.1)
+# Plan — The Comparison View (screen-spec Plan 3.0, A–J restructure)
 
-> **Status:** v2.1 — plan. v2.0 revised v1.0 in response to an external review (ChatGPT);
-> **v2.1 incorporates Morris's decisions** on the two questions v2.0 flagged (§15):
-> comparison-share access control (**DEC-7**) and the default seller-priority dimensions
-> (**DEC-8**). This is the plan for writing `07-screen-design/comparison-view.md`, not the
-> spec. It remains a **revision, not a rewrite**: every v1.0/v2.0 section not superseded is
-> retained. The whole is specific enough to write the spec from without further guidance —
-> and with both former blockers resolved, **`comparison-view.md` can now be written.**
-> **What changed and why:** see §17 (per-concern disposition + changelog; §17.3 covers
-> v2.0 → v2.1). v2.0 added the data-state taxonomy (§5), the comparison-share brief (§8),
-> worked fixtures (§9), and the disposition (§17); **v2.1 locks access control and the
-> dimension set and propagates them throughout** (§4b, §8, §9, §10, §14, §15, §16).
-> **Derives from:** `NORTH-STAR.md`; `trust-doctrine.md` §2, §4, §5; `information-
-> architecture.md` §1, §2.1, §3–§5, §7; `critical-path.md` §3; `states-and-edge-cases.md`
-> §1, §3, §4, §4.1; `handoff.md` §2, §6, §7–§8; `verify-workspace.md` and
-> `share-surface.md` (format, quality, fork discipline); `copy-guidelines.md`;
-> `domain-vocabulary.md`; `_templates/screen-spec-template.md`.
-> **Produces:** the writing brief for `comparison-view.md` (agent workspace), a full
-> sibling brief for `comparison-share-surface.md` (§8), and the dependency note for
-> `reconciliation-gate.md` (§3).
+> **Status:** v3.0 — plan. This version replaces the v2.1 numeric structure with the
+> A–J framework requested for `07-screen-design/comparison-view-plan.md`.
+> It synthesizes v2.1's resolved forks, fixtures, comparison-share brief, and
+> data-state taxonomy, and incorporates six review-driven hardening changes.
+>
+> **What this file is:** the writing guide for `comparison-view.md` (the
+> comparison-view screen spec). The plan is the brief; the spec is the artifact.
+>
+> **Does not replace:** `comparison-view.md` (the actual spec, not yet written).
 
 ---
 
-## 0. Orientation — what this screen is, in one paragraph
+## Context
 
-The comparison view is the **compare** stage of the spine (`upload → verify →
-[compare] → share`), active only when **N > 1**. It is the single screen that
-exercises **ranking-trust** (doctrine §2, Clause 2): legible order, honest weighting,
-and the inverted-ranking guarantee. Every other screen lives on the *understanding-
-trust* surface (one offer, made clear). This one inherits all of that **per offer**
-(the Clause-1 atom recurs inside the comparison) and adds three mechanisms the single-
-offer view never needs (doctrine §4–§5). It is the retention engine (NORTH-STAR's depth
-loop) and the only home of the most product-specific guarantee in the doctrine — a
-guarantee that has never been rendered. This plan exists to render it correctly the
+The comparison view is the only screen in the product that exercises **ranking-trust**
+(doctrine §2, Clause 2). Every other screen lives on the understanding-trust surface —
+one offer, made clear. This screen inherits all of that per offer and adds three
+mechanisms the single-offer view never needs: legibility, honest weighting, and the
+inverted-ranking guarantee. All three have outstanding `TODO(design)` markers in
+`trust-doctrine.md` §4.1, §4.2, and §4.3/§5. This spec resolves all three for the
 first time.
 
----
+The comparison-view-plan.md v2.1 has done substantial work: it resolved the surface-scope
+fork (two documents), placed the reconciliation gate as a sibling dependency, proposed
+resolutions to the three doctrine TODOs, built a full data-state taxonomy, wrote the
+comparison-share brief (§8), produced six worked fixtures (§9), and incorporated
+Morris's decisions (DEC-7 access control, DEC-8 dimension defaults). The A–J structure
+reorganizes that content into a reference the spec author can work from section by section.
 
-## 1. The one organizing idea
-
-**Handle: the order accounts for itself.**
-
-> **One sentence:** the weighting that drives the order and the terms that decide each
-> position are continuously visible and live alongside the order itself — so "why is
-> this offer above that one?" is always answerable in plain terms, and the one thing
-> the screen will never do is show a position it cannot account for.
-
-The comparison stage's equivalent of verify's *provenance made spatial* and share's
-*orient first*, derived from the trust obligation, not from convenience:
-
-| Screen | Stage trust obligation | Organizing idea | The move it makes physical |
-|---|---|---|---|
-| Verify | understanding-trust — a wrong *fact* | **provenance made spatial** | focus a value → the document moves to its source |
-| Share | understanding-trust, for a vulnerable reader | **orient first** | lead with what the offer *is*, before any detail |
-| **Compare** | **ranking-trust — a wrong *order*** | **the order accounts for itself** | every rank co-present with its basis; re-weight and watch the order respond; withhold any order that can't be traced |
-
-This is the constructive form of the doctrine's two prohibitions — *"An order Docside
-cannot explain in plain terms is an order Docside does not present"* (§4.1) and *"If we
-cannot trace how a ranking was determined, we will not present it"* (§5). Where verify
-makes a **value** traceable to the contract, comparison makes the **order** traceable
-to the weighting and the terms. If two people disagree about any component below, this
-is the sentence they return to first (template §0). *(The review scored this dimension
-5/5; it is retained unchanged.)*
+This revision incorporates six review-driven hardening changes:
+1. At-rest adjacent-order reason preview, so the matrix does not merely show dimension
+   leaders but also gives a terse reason for each neighboring rank relationship.
+2. A DEC allocation/status table, so fork status and decision numbering do not drift.
+3. A runtime contract, so target behavior is separated from alpha degradations.
+4. A consolidated field-state matrix for all matrix-cell states.
+5. Explicit aggregate-field participation rules, especially for net-to-seller.
+6. A share-readiness matrix for withheld, provisional, and not-yet-verified states.
 
 ---
 
-## 2. Surface scope — two documents, not one (resolves Fork A)
+## A. Scope Statement
 
-The work spans two surfaces: the **agent-facing comparison workspace** (authenticated,
-desktop-likely, interactive) and the **comparison share surface** (public
-`/share/[token]` for N > 1, mobile-first, read-only).
+The comparison view work spans **two surfaces** and one **sibling dependency**:
 
-**Recommendation: two separate documents.** `comparison-view.md` (this plan's target)
-specifies the **agent workspace**; a sibling `comparison-share-surface.md` specifies
-the **seller surface** — exactly as `share-surface.md` followed `verify-workspace.md`.
+**Surface 1 — Agent workspace** (`/listings/[id]/compare`): Authenticated,
+desktop-likely (more deliberate than verify; agents cluster compare/share near
+deadlines), interactive. Active when N > 1. The primary target of `comparison-view.md`.
 
-**Rationale.** Precedent is unambiguous (share-surface §7 already defers "the comparison
-surface… its own spec follows"); IA §3 forbids the merge ("two distinct information
-architectures… conflating them is a category error"); the two surfaces carry different
-organizing ideas (workspace: *the order accounts for itself*; share: *fit-to-priorities,
-an input not a verdict*); and the share carries its own open access-control decision
-(handoff §8). Two focused specs each earn the rigor verify/share earned.
+Owns:
+- Ranked offer display (dimension matrix + ranked spine)
+- Weighting control (basis-line header + Customize expanding in place)
+- Legibility affordance (matrix at rest; pairwise "why above" delta on demand)
+- At-rest adjacent-order reason preview in the ranked spine
+- Suppression/withhold states for unreadable dimensions
+- Compare → share boundary (the agent enters recipient emails; link is expiring + revocable per DEC-7)
+- Revise-set re-entry (drop/swap mid-compare)
+- Set-provisional and offer-not-yet-verified markers
 
-**What changed in v2.0:** the review (Major 2) asked that the share be *planned*, not
-just deferred. It now is — **§8 is a full sibling brief** (inheritance table, divergences,
-access control, resolved questions), not a list of obligations. `comparison-view.md`
-still carries only a short "handoff to the comparison share" pointer to §8.
+Does NOT own:
+- The reconciliation gate itself (which offers enter the set) → sibling `reconciliation-gate.md`
+- The comparison share recipient experience → sibling `comparison-share-surface.md`
+- The net-to-seller formula (main repo arithmetic; the spec cites, does not define)
+- Visual design tokens (deferred to brand adoption)
 
-**Fallback (named, not recommended):** if the team insists on a single artifact, §8
-becomes `comparison-view.md` §8 verbatim. Rejected for the reasons above; recorded so
-the choice is explicit.
+**Surface 2 — Comparison share surface** (`/share/[token]` for N > 1): Public,
+mobile-first, read-only. The seller-facing multi-offer view. **IN SCOPE for this
+plan as a brief (see §G); OUT OF SCOPE as a full spec.** The comparison share gets its
+own document (`comparison-share-surface.md`); the plan for that spec lives in §G of
+this plan (the full sibling brief is in v2.1 §8).
 
----
+**Sibling dependency — Reconciliation gate** (`reconciliation-gate.md`): Governs
+which offers enter the comparison. The comparison view depends on its output (a curated
+set) but does not re-specify it. The comparison view owns only: (a) the curated-set
+precondition stated explicitly, (b) the "revise set" re-entry affordance, (c) the
+set-provisional marker, and (d) the N → 1 collapse consequence.
 
-## 3. The reconciliation gate — a sibling spec this one depends on (resolves Fork B)
-
-The reconciliation gate (IA §2.1, states §4.1) is where the agent decides which offers
-**enter** the comparison — assembling membership across the two intake channels, with
-source visible, duplicates flagged, per-offer exclusion.
-
-**Recommendation: its own spec (`reconciliation-gate.md`).** Its trust job is
-*membership made deliberate* — a **precondition** for ranking-trust, not ranking-trust
-itself. It is structurally upstream (critical-path §3 places it on the Verify-each →
-Compare seam; its output is the comparison's input), it fires at a different nav
-location (listing → compare boundary, IA §5), and verify-workspace §7 already names it
-as a separate deferred screen.
-
-**What `comparison-view.md` still owns (the comparison-internal slice):** the
-**curated-set precondition** stated explicitly; the **"revise the set" re-entry** (drop
-the duplicate / withdrawn / backup mid-compare); the **set-provisional state** (the set
-is open until the deadline, agent-workflow §2); and the **N→1 collapse** consequence
-(§7). *Alternative considered and rejected:* gate-as-stage-0-of-compare (would load the
-comparison view's organizing idea with a second trust job; the gate also governs the
-listing view). Retained unchanged from v1.0.
+**Why this scope:** The two surfaces serve different audiences (agent vs. seller) with
+different organizing ideas, interaction models, and access-control obligations. IA §3
+forbids merging them ("two distinct information architectures — conflating them is a
+category error"). `share-surface.md` §7 already defers "the comparison surface — its
+own spec follows." The reconciliation gate's trust job is *membership made deliberate*,
+not ranking-trust — a distinct problem that would dilute the comparison view's
+organizing idea if merged.
 
 ---
 
-## 4. The three doctrine TODOs that land here — proposed resolutions
+## B. Relevant Files and Sections
 
-The three `TODO(design)` markers in doctrine §4–§5. The spec must close all three (no
-TODO for this screen survives into the spec). Each resolution is concrete enough to draft
-and to lock as a DEC.
+### Direct sources (the sections this spec derives from)
 
-### 4a. Legibility of *relative* position (doctrine §4.1 TODO)
-
-"Why is offer A above offer B?" must be answerable in terms the agent could repeat to a
-seller — and **distinct from** the per-offer explanation of 3.3 (which describes one
-offer). 4.1 is about the *delta*.
-
-**Resolution — a dimension matrix at rest, a pairwise delta on demand.**
-- **At rest (the scaffold):** the comparison is a **dimension matrix** — offers in
-  ranked order down the side, the **weighted dimensions** across the top (from the
-  seller-priority profile). Each cell holds the offer's **term** in that dimension
-  (Explanation voice — "21-day close"), and the **leading offer per weighted dimension
-  is marked**. Down a column = "who leads on this priority?"; across a row = the Clause-1
-  atom for one offer. The basis is legible without interaction.
-- **On demand (the §4.1 affordance proper):** tapping an offer (or the gap between two
-  adjacent offers) yields a **pairwise "why this order" delta** — "Ranked above [next]
-  on: higher price, faster close; [next] leads on: lower buyer-broker comp." Pure terms,
-  signed by direction, **scoped to the weighted dimensions** (a difference on an
-  unweighted dimension is noted as "they also differ on X, which you didn't weight,"
-  never as a reason for the order).
-- **Constraints:** terms only, never scores (copy §2.2); reflects the *current*
-  weighting; composes with suppression (4c) — a delta that would rely on an unread
-  dimension says so, never silently drops it.
-
-### 4b. The weighting display *at rest* (doctrine §4.2 TODO)
-
-The free-slider / live-total **Customize** model is the interactive control. The TODO:
-what does the weighting look like *before* Customize is opened? "Legible without
-interaction."
-
-**Resolution — the "Ranked by" basis statement + a compact relative-weight indicator
-as the always-visible header; Customize expands it in place.**
-- **At rest:** a term-based, ordered **basis line** in the DEC-8 default order — *"Ranked
-  by: highest net to seller, fewest contingencies, stronger financing, faster close"* (the
-  format echoes handoff §7 / seller-workflow §4; the order is the confirmed default, §10) —
-  paired with a **compact relative-weight indicator** (ordered bars/chips, labeled by
-  dimension, magnitude shown). It sits above the matrix as the order's **declared basis**.
-- **Customize** expands the header **in place** into the free-slider / live-total editor
-  (doctrine §4.2) — the **same control at two widths** (verify's invariant).
-- **Default source:** the listing-scoped seller-priority profile, seeded from agent
-  presets (IA §7). "At rest" = the seeded/last-saved profile, shown legibly.
-
-**The line the spec must hold — weights shown, sub-scores never.** Doctrine §4.2
-*mandates* visible weighting; copy §2.2 *forbids* sub-scores. Not in tension: the
-**weighting** is the seller's priorities (ordered terms + relative magnitudes); the
-**sub-score** is the per-offer math, and it never appears.
-
-**What is visible *instead of* a sub-score** *(added in v2.0, review Minor 3 / Suggested
-Change 3 — the positive enumeration):*
-1. the **basis line** — "Ranked by: [priorities, in order]";
-2. the **dimensions** — the matrix columns, each a term-bearing priority;
-3. the **deciding terms** — the pairwise "why A over B" delta, in business language;
-4. the **leading-cell marks** — which offer leads each weighted dimension;
-5. the **relative-weight indicator** — ordered bars/chips (priority magnitude, *not* a
-   per-offer score);
-6. the **caveats** — suppression / partial / withheld / tie / near-tie markers.
-
-**Never visible:** a per-offer total, a 0–100, a "0.92 vs 0.78," a star rating, a "best
-offer" badge.
-
-### 4c. The inverted-ranking guarantee, made visible (doctrine §5)
-
-When a comparison-affecting dimension is suppressed because a field is unreadable, what
-does the agent see? The guarantee: *"marks it unknown and tells you so… does not fill
-the gap with a default… If we cannot trace how a ranking was determined, we will not
-present it."*
-
-**Resolution — a three-tier treatment that degrades from cell to order:**
-1. **At the cell:** the unreadable comparison-affecting field renders with the standard
-   **unreadable** treatment ("We couldn't read this field"), at elevated weight for
-   high-stakes fields (states §1; share-surface DEC-4 logic). Never blank, never a dash,
-   never a default, never a guess.
-2. **At the offer's position:** the dimension that field feeds is **suppressed for that
-   offer** — the offer is explicitly *not ranked on [dimension]*, with a visible
-   **"partial — [dimension] unread"** caveat. **The suppressed dimension does not
-   disappear; it remains visible-but-excluded** *(clarified in v2.0, review Minor 4 / Q3
-   — a disappeared dimension would hide a gap, violating non-laundering, handoff §6)*.
-3. **At the order (the §5 hard guarantee):** if the suppressed dimension would be
-   **decisive** between two offers, the product **does not assert that pairwise order** —
-   the offers render as a **bracketed "can't be separated on your priorities until
-   [field] is read"** group, with the field named. The one place the product visibly
-   **withholds** an order rather than guess it.
-
-**Resolution path (cross-screen tie):** every suppression treatment links **back to that
-offer's verify workspace** for that field — "read it at verify to rank this dimension."
-Suppression is an honest hold with a way forward, never a dead end.
-
-Worked instances of all three tiers are in §9 (fixtures 2–3) — *added in v2.0 (review
-Minor 2) so the tiers stay concrete behavior, not abstract doctrine prose.*
-
-**Cross-repo caveat (CLAUDE.md seam):** doctrine §5's DEFER-LINE states this guarantee
-is honored today only in the §3G(3) buyer-broker-comp field and is **not yet
-generalized**. 4c specifies the *design*; the per-field runtime generalization
-(degrade-to-unknown, not to a ranking-moving default) is **tracked main-repo work**. If
-the backend can only *flag* (not *withhold*) for some fields at alpha, tier 3 degrades —
-but that degradation is **doctrine-bound** and escalates (§14), it is not a free
-screen-level edit.
-
----
-
-## 5. The data-state taxonomy — how each state affects ranking and disclosure *(new in v2.0)*
-
-*Added in response to review Major 3 / Suggested Change 3 and Questions 5. The six states
-already live in states §1; what was missing is their effect on **ranking participation**
-and **disclosure**, plus one offer-level distinction the interruptible workflow
-introduces. This taxonomy is the single reference the spec's §2 (state grammar) and §6
-(forks) build on.*
-
-### 5.1 Field-level states
-
-| Field state | Means (states §1) | Ranking participation | Disclosure |
-|---|---|---|---|
-| **Verified value** (extracted-confident) | read, stood behind at verify | ranks normally | the value, Explanation voice; §-citation |
-| **Agent-corrected** | agent fixed a misread at verify (vouched) | ranks normally — a corrected value is a vouched value | the value + "corrected by agent · original: X," original traceable (doctrine §3.1 v0.5) |
-| **Empty-on-form** (blank) | field exists on the form; left blank | **not imputed**; excluded from that dimension's lead-marking for this offer; if it feeds an aggregate (net), the aggregate is suppressed-or-caveated, **never defaulted to 0** | "Not specified on this form." **Not** labeled "intentionally omitted" — see rule (a) |
-| **Not-captured** (structurally-null) | the form never records this value | never a ranking input (no value exists to rank) | "Not captured on this form." |
-| **Not-applicable** | excluded by another answer (e.g., financing rows when all-cash) | the dimension is **N/A for this offer** — shown as N/A, not as a gap and not as a zero | "Not applicable — [reason]." |
-| **Unreadable** | OCR/parse failure, or low-confidence resolved to unreadable at verify (states §1.1) | **suppressed (4c)** — never ranks on it; if decisive, order withheld | "We couldn't read this field." Elevated weight if high-stakes |
-| **Conflicting / incoherent** | e.g., `PCT-OR-FLAT` contradictory read | resolves to `null` → treated as **unreadable** (never a guess) | "We couldn't read this field." (copy §3 `PCT-OR-FLAT` rule) |
-
-**Three rules the taxonomy enforces:**
-- **(a) We do not distinguish "blank" from "intentionally omitted."** Asserting the
-  buyer *chose* to omit is inferred intent — forbidden (copy §4; `DEFAULT-TRAP`, presence
-  ≠ choice). The form shows blank; we show blank; we never narrate why. *(This partially
-  rejects a sub-item of review Major 3 — "intentionally omitted" is not a state we may
-  claim — with a doctrine-grounded reason.)*
-- **(b) Blank ≠ zero for ranking.** A blank component never defaults to 0 in an
-  aggregate. Whether a specific blank field carries a contractual meaning (blank = none)
-  is **field-semantics owned by `domain-vocabulary.md` / the main repo**, surfaced via
-  the field's state — never guessed by the comparison.
-- **(c) Not-applicable, unreadable, and empty are three different cells.** An all-cash
-  offer's financing dimension is *N/A* (not compared, not a gap); an unread financing
-  field is *unreadable* (suppressed); a blank financing field is *empty* (not imputed).
-  The grammar of absence holds inside the matrix at the pixel level (states §1; DEC-6
-  prohibition list).
-
-### 5.2 Offer-level verification state *(the distinction the interruptible workflow adds)*
-
-The workflow is interruptible and the set is open until the deadline (agent-workflow §2),
-so an offer can sit in the set **before** it has completed verify. Field-level
-low-confidence is already resolved-at-verify (states §1.1), so this is an *offer*-level
-distinction, not a field one:
-
-| Offer state | Means | Treatment |
+| File | Section | What it contributes |
 |---|---|---|
-| **Vouched** | passed the verify → share boundary — every field confirmed, corrected, or marked unreadable (critical-path §3) | ranks normally |
-| **Not-yet-verified** (provisional) | in the set, but verify is incomplete | flagged **"not yet verified"**; held out of the asserted ranking (or shown provisionally with a **"verify to rank"** prompt); **never ranked as if vouched** |
+| `00-foundations/trust-doctrine.md` | §4.1 | Legibility obligation + `TODO(design)` for the relative-position affordance |
+| `00-foundations/trust-doctrine.md` | §4.2 | Honest weighting obligation + `TODO(design)` for the at-rest weighting display |
+| `00-foundations/trust-doctrine.md` | §4.3 + §5 | Inverted-ranking guarantee (full user-facing statement; §3G(3) precedent; DEFER-LINE on generalization) |
+| `00-foundations/trust-doctrine.md` | §3.1, §3.2, §3.3 | Clause 1 obligations inherited per offer: provenance, honest uncertainty, term-based explanation |
+| `00-foundations/trust-doctrine.md` | §2 | The two trust surfaces table: understanding-trust vs. ranking-trust |
+| `08-states-and-edge-cases/states-and-edge-cases.md` | §4 | Compare-stage edge cases: unreadable-dimension, asymmetric-completeness, N=1, tie/near-tie |
+| `08-states-and-edge-cases/states-and-edge-cases.md` | §4.1 | Assembling the comparison set: cross-channel duplicate, unreadable buyer-name, source-ambiguity, inclusion-granularity |
+| `08-states-and-edge-cases/states-and-edge-cases.md` | §1, §1.1, §6 | Field states (three-way grammar), low-confidence resolution, states ledger |
+| `02-information-architecture/information-architecture.md` | §2.1 | Reconciliation gate; two intake channels; §1B auto-join key; buyer-name fallback handle |
+| `02-information-architecture/information-architecture.md` | §3, §4, §5 | Two zones; navigation hierarchy; route map (`/listings/[id]/compare`, `/share/[token]`) |
+| `02-information-architecture/information-architecture.md` | §1, §7 | Object model (seller-priority profile, weighting); locked IA decisions |
+| `00-foundations/domain-vocabulary.md` | §2, §4, §5 | Five hazard tags; high-stakes seed entries; `PCT-OR-FLAT` worked entry for the §5 precedent |
+| `10-copy-guidelines/copy-guidelines.md` | §1.1, §1.3 | Principle voice; System voice ("An unreadable field is a fact, not a crisis") |
+| `10-copy-guidelines/copy-guidelines.md` | §2.1, §2.2 | Three-way grammar of knowing (present/empty-on-form/unreadable); no score narration |
+| `11-design-decisions/decisions.md` | DEC-7 | Access control: email-gated recipient access, expiring + agent-revocable (Morris) |
+| `11-design-decisions/decisions.md` | DEC-8 | Default seller-priority dimensions and order: net to seller ▸ contingencies ▸ financing strength ▸ close speed (Morris) |
 
-This is the review's "extracted-but-not-verified / provisional" concern, placed at the
-correct level. **Distinguish from set-provisionality (Fork K):** set-provisional = *more
-offers may arrive*; offer-provisional = *this offer isn't vouched yet*. Both are real and
-both are shown; they are different markers.
+### Quality references (format and rigor to match)
 
----
-
-## 6. Design forks — every place two reasonable options decide the screen
-
-**Altitude discipline (the spec stays at design/behavior level).** *Added in v2.0
-(review Overengineering 3/5).* The forks below specify **behavior and its trust purpose**,
-not implementation. The spec references implementation constants and engines **as
-dependencies, by name** — `HIGH_STAKES_FIELD_KEYS`, the scoring/weighting engine, the
-net-to-seller formula — and **does not redefine them** (high-stakes-fields-pointer
-governance: cite, never fork). Live re-ranking is specified as *"the order re-orders when
-a weight changes, for this trust reason,"* not as animation/perf mechanics. Suppression
-tiers describe *what the agent sees*, not how it is computed.
-
-Forks A (surface scope) and B (gate placement) are resolved in §2–§3. The rest decide
-layout, components, and trust grammar. Each carries a recommended lock with its anchor;
-**LOCK-pending-mockup** marks the high-risk ones the mockup must validate (§14).
-
-### Fork C — Core layout: matrix vs. ranked cards vs. hybrid  *(the cascading fork)*
-- **Matrix** (offers × dimensions): strongest cross-offer legibility; but reads as a
-  **scoreboard**, which implies scores (copy §2.2 hazard). **Ranked cards**: strongest
-  per-offer atom, mobile-friendly; weak at *relative* legibility. **Hybrid**: order +
-  basis co-present.
-- **Recommend: hybrid — a ranked order spine + a dimension matrix as the comparison
-  body.** Defuse the scoreboard risk structurally: **no total column, no per-offer score,
-  ever**; cells hold terms, the spine holds positions. Anchor: doctrine §2; copy §2.2.
-  **LOCK-pending-mockup.** → **DEC-7** (§14).
-
-### Fork D — Orientation: offers-as-rows vs. offers-as-columns
-- **Recommend: offers as rows, dimensions as columns.** A ranking *is* a vertical list;
-  scales in N; degrades to mobile cards cleanly. Anchor: NORTH-STAR depth loop;
-  agent-workflow §2. **LOCKED.** (Mobile inverts to per-offer cards — §12 phase 6.)
-
-### Fork E — Re-weighting feel: live re-rank vs. apply-then-reorder
-- **Recommend: live re-ranking**, animated transition (offers move, don't jump). Seeing
-  the order move when you move a weight is the strongest proof it is not a black box.
-  Anchor: doctrine §4.2. **LOCK-pending-mockup** (motion/perf risk; mobile may fall back
-  to apply-then — §12, Fork-E scope lever in §11).
-
-### Fork F — Customize at rest: collapsed vs. always-open
-- **Recommend: collapsed at rest** (the basis line + compact weights; Customize expands)
-  — at-rest legibility without the control's footprint. Anchor: doctrine §4.2 TODO; the
-  verify two-widths precedent. **LOCKED.** → **DEC-8** (§14).
-
-### Fork G — The legibility affordance form
-- **Recommend: matrix at rest + pairwise delta on demand** (per 4a). Marked leading
-  cells carry at-rest legibility; the pairwise delta answers the doctrine's *relative*
-  question, distinct from 3.3. Anchor: doctrine §4.1. **LOCKED.**
-
-### Fork H — Where the per-offer Clause-1 atom lives
-- **Recommend: inline expansion into a side detail pane (desktop) / drill-down (mobile),
-  with a link to the full verify workspace** for re-checking. The comparison composes
-  atoms; it doesn't replace them. Anchor: doctrine §4; IA §4. **LOCKED.**
-
-### Fork I — "Net to seller": computed dimension vs. components only  *(trust-critical)*
-- **Computed net** serves the "highest net" priority but can inherit a guess from an
-  unread component (buyer-broker comp `PCT-OR-FLAT`, credits) and **invert the order** —
-  the §5 danger. **Components only** is safest, least legible.
-- **Recommend: compute net to seller only when all components are confidently read; if
-  any component is unread, net drops to the suppression treatment (4c) — and, per the
-  v2.0 clarification, the net dimension stays *visible-but-excluded* ("net can't be
-  determined: [component] unread"), it does not disappear and is not ranked.** Net is
-  then an **arithmetic of traceable values**, traceable to its components — the move the
-  worked specimen already makes with *"$250,000 down"* (price − financing, both present
-  and traceable) — never a model guess. Anchor: worked-specimen §1; doctrine §5; the
-  §3G(3) precedent. **LOCK-pending-mockup** (validate on a real packet with an unread
-  component — fixture 2, §9). → **DEC-10** (§14).
-
-### Fork J — Free-text / unweightable terms in a dimension matrix
-- **Recommend: a non-ranked "Other terms" section, quoted verbatim, explicitly outside
-  the weighting** — present to read, never scored into the order; the screen "visibly
-  leaves room for everything it can't see" (seller-workflow §4). Anchor: doctrine §3.2
-  v0.3(a); copy §2.4. **LOCKED.**
-
-### Fork K — Set provisionality: provisional vs. present-as-final
-- **Recommend: a provisional marker until the agent marks the set complete** —
-  *"Comparison of the 4 offers in so far"* — never implying a finality the transaction
-  hasn't reached. Anchor: agent-workflow §2. **LOCKED.** *(Distinct from the offer-level
-  not-yet-verified marker, §5.2.)*
-
----
-
-## 7. Comparison-specific edge cases → screen treatments (states §4)
-
-States §4.1 (assembling the set) belongs to the **reconciliation-gate** spec (§3); the
-comparison view inherits the curated set + the re-entry affordance. The four states §4
-cases below are the comparison view's own. Each maps to a data-state from §5.
-
-| Edge case | Trigger | Screen treatment | Anchor |
-|---|---|---|---|
-| **Unreadable comparison-affecting field** | a ranking-feeding field is unreadable for one offer | the **three-tier suppression** of 4c: cell unreadable → dimension suppressed, **visible-but-excluded** → if decisive, **order withheld**; link back to verify (fixtures 2–3) | doctrine §5; states §4; §5.1 |
-| **Asymmetric completeness** | offer A has a verified term; offer B left it blank (Q5) | B's cell shows **"Not specified on this form"** (empty-on-form, visually distinct from unreadable); B is **not imputed, not defaulted to 0, not penalized**; the dimension's lead-marking excludes B; if the field feeds an aggregate, the aggregate is suppressed-or-caveated for B, never silently zeroed | states §4; §5.1 rules (a)/(b) |
-| **N = 1 in the comparison** | dedup/exclusion (or only one offer in) collapses the set to one | **fall back to the single-offer summary** with a note ("Only one offer is in this comparison"); **no ranking chrome, no weighting header asserting an order over one item** (fixture 5) | states §4 |
-| **Tie / near-tie** | offers within a closeness band on the weighted priorities | a **tie / near-tie band** — same position or "these two are very close on your priorities"; the pairwise delta reads "nearly even; they differ on [terms] but it's close"; **never a false decisive order from rounding** (fixture 4) | states §4; copy (no false precision) |
-
-Two notes for the spec: the **closeness-band width** and the **confidence threshold** are
-*tuning* questions (extraction/scoring), not design questions — the design provides the
-*states* (tie/near-tie, suppressed) and their treatments. And the dangerous collapses
-(empty-on-form vs. unreadable; agent-corrected vs. present-confident) must hold **inside
-the dense matrix**, where they are likeliest to fail.
-
----
-
-## 8. The comparison share — inheritance, divergence, and access control *(expanded in v2.0)*
-
-*Rewritten from v1.0's obligations list into a full sibling brief, in response to review
-Major 1 (access control), Major 2 (share inheritance), and Questions 1–4. This section
-is the brief for `comparison-share-surface.md`. The comparison share is, in one line, **N
-single-offer share surfaces, ranked, with the basis shown and access tightened** — every
-Clause-1 invariant per offer, plus a legible order presented as an input to the seller's
-decision, never the decision.*
-
-### 8.1 What it inherits vs. where it diverges (single-offer share → comparison share)
-
-| Element / invariant | Single-offer share (`share-surface.md`) | Comparison share |
-|---|---|---|
-| Organizing idea | "orient first" — what this offer is | **DIVERGES** → "fit-to-priorities, an input not a verdict" (seller-workflow §4–§5) |
-| Per-offer atom: provenance to seller, the six absence states distinct, term-based, corrections-as-corrected, glosses always-on, §-citation inline (DEC-3/4/5) | yes, for one offer | **INHERITS, per offer** — the comparison is N atoms |
-| Top-of-screen | the one offer's headline terms | **DIVERGES** → the ordered set + the **"Ranked by…" basis line** |
-| Weighting display | n/a (no order) | **NEW** → basis line always visible (Q4); magnitudes may be simplified for the seller, basis never hidden |
-| Suppressed dimension | n/a | **NEW** → shown **visible-but-excluded** to the seller (Q3) |
-| §5 guarantee, Principle voice | absent (single offer; worked-specimen §2) | **NEW** → "If we cannot trace how a ranking was determined, we will not present it" |
-| Buyer identity | the one buyer (§1A) | **shows each buyer name (§1A)** to the seller (Q2); unreadable → fallback handle (states §4.1) |
-| Read-only; no acknowledgment; `tel:` call prompt; non-laundering prohibition list (DEC-6) | yes | **INHERITS**; the prohibition list **extends to the order** (no false decisive order, no hidden suppression) |
-| Access control | lightweight link acceptable for alpha (handoff §8) | **DIVERGES** → email-gated recipient access, expiring + agent-revocable (DEC-7 / §8.3); a forward doesn't carry access |
-
-### 8.2 How ranking reaches the seller (the governing decision)
-
-**Ranking does reach the seller — as fit-to-priorities, never as a verdict.** The order
-plus the visible "ranked by [their priorities]" basis, with the surface **visibly leaving
-room for what it can't see** (a buyer's letter, gut feel — seller-workflow §4). **No
-"best offer" verdict, no "accept" action, no score** (seller-workflow §5: "the decision
-is never the algorithm's"). This is a stronger obligation than the single-offer surface,
-which had no order to caveat.
-
-### 8.3 The access-control decision *(DECIDED by Morris — resolves review Major 1)*
-
-**The problem.** How a comparison share link is protected. A forwarded comparison link
-exposes **every competing buyer's price and terms** (handoff §7) — categorically worse
-than a single-summary leak, and email makes forwarding the norm (DEC-1 consequence).
-
-**DECIDED (Morris): a revocable, gated share link — email-gated recipient access with
-expiration and agent revocation.** Concretely: the agent enters **one or more seller
-recipient emails**; the recipient **verifies access through email**; the link **can
-expire**; the agent **can revoke** access at any time. A **forwarded** recipient who opens
-the link **does not automatically receive access** — they meet the same email gate. The
-comparison share is **not** a fully public, freely forwardable link.
-
-**Options considered** (the space from review Q1 + handoff §8):
-
-| Option | Disposition |
+| File | What to take from it |
 |---|---|
-| Free-forward tokenized link | **rejected** — a forward exposes every buyer's terms (multi-buyer breach) |
-| Revocable link | **adopted (part of the model)** — agent can kill the link later |
-| Expiring link | **adopted (part of the model)** — link dies after a window |
-| Email-gated / recipient-bound | **adopted (the core)** — recipient verifies via email; a forward doesn't carry access |
-| PIN / passcode | **rejected** — a PIN forwards as easily as the link |
-| Per-view agent approval | **rejected as the default** — too much friction; breaks "open it cold on a phone" |
+| `_templates/screen-spec-template.md` | The mandatory seven-section structure all screen specs follow (§0 organizing idea → §7 deferred); the cardinal rule (no two states look alike); accessibility baseline is never deferred |
+| `07-screen-design/verify-workspace.md` | Format rigor: one organizing idea derived from the trust obligation, then layout → states → element → interactions → mobile → forks → deferred. The two-widths precedent for Customize. |
+| `07-screen-design/share-surface.md` | Format for the public share surface spec; how DEC entries are embedded inline; how the prohibition list is handled; §7 already defers "the comparison surface — its own spec follows" |
 
-**Why this balance.** Email-gating resists the forward-native leak (handoff §7) that PIN
-and free-forward links don't, while staying lighter than per-view approval — the seller
-still opens the link on their phone, just after a one-time email verification. Single-
-summary links may stay lightweight for the alpha (handoff §8); the stronger gate is
-specific to the multi-buyer comparison.
+### Cross-reference obligations (sections in other docs that promise something this spec must deliver)
 
-**Scoping — this governs the public share, not `comparison-view.md`.** The agent workspace
-is **authenticated**; the access model governs the **public share link**, i.e. the sibling
-`comparison-share-surface.md`. The workspace **reflects** it in the "Share comparison"
-affordance: the agent **enters recipient emails** and sees the link is **expiring and
-revocable** — the share-initiation UI the workspace owns. The full recipient-verification,
-expiry, and revocation flow belongs to the comparison-share spec and the main repo.
-
-**Home.** Recorded as **DEC-7** (`11-design-decisions/decisions.md`) and at `handoff.md`
-§8 (resolving its standing open question). The main repo implements the email gate,
-expiry, and revocation.
-
-### 8.4 Resolved share questions (from the docs)
-
-- **Q2 — buyer identity:** **show each buyer's name (§1A) to the seller.** The seller
-  owns these offers on their own property; real-world offer presentation names buyers.
-  Confidentiality (handoff §7) is about the link reaching **outsiders** — addressed by
-  access control (§8.3), **not** by hiding buyers from the legitimate seller.
-  Unreadable §1A → the fallback handle (states §4.1). Agent-controlled aliases are a
-  possible later option, not the default. *Resolved from docs.*
-- **Q3 — suppressed dimension visible to the seller?** **Yes — visible-but-excluded.**
-  Omitting it would hide a gap to look cleaner — a non-laundering violation (handoff §6)
-  and a DEC-6 prohibition ("no collapsible absence rows"). The seller sees "we couldn't
-  read [field] for [buyer], so this offer isn't ranked on [dimension]." *Resolved from
-  docs.*
-- **Q4 — same weights as the workspace, or can the agent hide/simplify?** **The basis
-  (ordered priorities) is always shown; the agent sets the weights (that *is* the
-  seller's priority profile) but cannot hide what produced the order** (doctrine §4.2:
-  never a black box; handoff §2 invariant 5: weighting visible). **Display may simplify**
-  — the seller surface may show the basis line and omit precise bar magnitudes — but the
-  basis is never hidden. *Resolved from docs.*
-
----
-
-## 9. Worked example fixtures *(new in v2.0)*
-
-*Added in response to review Minor 2 and Suggested Change 5, and to serve Testing/DoD
-(§13). Illustrative data echoing the worked-specimen's style (not the ground-truth
-fixture); no CAR verbatim text. Three offers on one listing, ranked by the DEC-8 default
-order: **net to seller ▸ contingencies ▸ financing strength ▸ close speed.** Net to seller
-(illustrative) = price − seller credit − seller-paid buyer-broker comp.*
-
-**Cast.**
-- **Reyes** — $1,275,000 · 21-day close · no appraisal contingency · 17-day loan
-  contingency · $5,000 seller credit · buyer-broker comp 2.5%. Net = 1,275,000 − 5,000 −
-  31,875 = **$1,238,125**.
-- **Chen** — $1,300,000 · 30-day close · appraisal contingency at price · no loan
-  contingency · no credit · buyer-broker comp (varies per fixture).
-- **Okafor** — $1,250,000 **all-cash** · 14-day close · no contingencies · no credit ·
-  buyer-broker comp 2.5%. Net = 1,250,000 − 31,250 = **$1,218,750**.
-
-**Fixture 1 — Clean ranking.** Chen's comp reads as a flat $26,000 → Chen net =
-$1,274,000. With net the top-weighted dimension, the order is **Chen ▸ Reyes ▸ Okafor**.
-The matrix shows each term per dimension; leading cells marked (Chen leads net; Okafor
-leads contingencies, financing, and close). Pairwise delta on Chen vs. Reyes: *"Ranked
-above Reyes on: higher net (+$36k), stronger financing (no loan contingency vs. a 17-day
-loan contingency); even on contingencies; Reyes leads on: faster close (21 vs 30 days)."*
-No score anywhere. All-cash Okafor sweeps contingencies / financing / close but trails on
-net — a clean illustration that the **top weight decides** while the delta still names
-every dimension honestly. (On the *financing-strength dimension*, all-cash is the
-strongest value, not a gap; the financing *detail* fields — loan amount, type — are the
-ones that read *not-applicable* for an all-cash offer, §5.1.)
-
-**Fixture 2 — Suppressed dimension.** Chen's buyer-broker comp reads incoherently
-(`PCT-OR-FLAT` conflict) → `null` → **unreadable**. Net depends on comp → Chen's **net
-cell shows "We couldn't read this field — net can't be determined: buyer-broker comp
-unread,"** visible-but-excluded; Chen is **not ranked on net** and carries a "partial —
-net unread" caveat; a **"verify to resolve"** link points to Chen's verify workspace.
-Chen still ranks on close and contingencies.
-
-**Fixture 3 — Withheld order.** As fixture 2, and Reyes and Chen are close enough that
-**net would decide** between them. Because net is suppressed for Chen, the **Reyes-vs-Chen
-order is withheld** — they render bracketed: *"Can't be separated on your priorities until
-buyer-broker comp is read for Chen."* Okafor still ranks (below the bracket). This is the
-inverted-ranking guarantee in pixels.
-
-**Fixture 4 — Tie / near-tie.** All fields read; Reyes and Chen land within the closeness
-band on the weighted priorities. They render as a **near-tie band**: *"Reyes and Chen are
-very close on your priorities."* Pairwise delta: *"Nearly even — Chen leads on net and
-financing, Reyes leads on close, even on contingencies; it's close."* No manufactured
-decisive order.
-
-**Fixture 5 — N = 1.** The reconciliation gate flagged Chen's emailed copy as a duplicate
-of an uploaded Chen; the agent dropped one, and Okafor was excluded as a backup → only
-Reyes remains. The comparison view **falls back to Reyes's single-offer summary** with
-*"Only one offer is in this comparison"* — no ranking chrome, no weighting header.
-
-**Fixture 6 — Forwarded seller share.** The agent shared the comparison to the seller's
-verified email (DEC-7). The seller forwards the link to an adult child. Because access is
-**email-gated**, the forwarded recipient **does not automatically get in** — opening the
-link puts them against the same email gate, not the comparison; the agent can also
-**revoke** the link or let it **expire**. The verified seller, on the seller surface,
-sees: **buyer names** (Reyes/Chen/Okafor), the **"Ranked by…" basis line**, any
-**suppressed dimension visible-but-excluded**, the **§5 guarantee in Principle voice**,
-**no scores, no "accept."** This fixture exercises DEC-7 plus the resolved share questions
-(§8.4) and is the comparison-share spec's acceptance case.
-
----
-
-## 10. Assumptions (things this plan depends on that the docs don't settle)
-
-- **The seller-priority dimension set is confirmed** *(DECIDED by Morris — DEC-8)*. The
-  default dimensions, **in priority order**, are **(1) net to seller, (2) contingencies,
-  (3) financing strength, (4) close speed** — listing-scoped, seeded from agent presets
-  (IA §7), and **user-controllable weights, not a fixed verdict**. They map to the
-  high-stakes vocabulary fields and `HIGH_STAKES_FIELD_KEYS` (cited, not forked). An
-  unreadable or unverified field **suppresses** its dimension rather than guessing (4c).
-  The matrix columns *are* these dimensions, in this default order.
-- **The main repo can support accountable ranking:** produce an order from a weighting,
-  expose **which terms drove each position** (4a), and **suppress / withhold** when a
-  field is unread (4c). Per doctrine §5's DEFER-LINE, the last is **not yet generalized** —
-  a real dependency (§15).
-- **Net to seller is computable from traceable components** (Fork I), suppressible when
-  any component is unread. The formula/component list is a main-repo concern; the spec
-  assumes net is *arithmetic of traceable values*, not a model output.
-- **"Comparison-affecting field" = the active weighting's source fields ⊇
-  `HIGH_STAKES_FIELD_KEYS`**, single-sourced from the main repo, not forked
-  (high-stakes-fields-pointer governance).
-- **`reconciliation-gate.md` will exist** (or its precondition is stubbed) — the
-  comparison view depends on a curated set (§3).
-- **The agent workspace is desktop-likely but not desktop-only for compare.** The
-  compare-and-share moment clusters at the deadline (agent-workflow §2 — more deliberate,
-  more desk-likely than verify). *Adjusted in v2.0 (review Minor 1):* the **weighting /
-  Customize control must still work on mobile** — an agent may re-prioritize from a
-  phone. See §12 phase 6.
-- **Visual tokens are deferred** to brand adoption (assets/README; verify §7; share §7).
-  The spec locks structure, hierarchy, and trust grammar — not color, type, or spacing.
-
----
-
-## 11. Risks (and the scope-reduction lever for each)
-
-- **The scoreboard trap.** A matrix reads as a scorecard; scores are forbidden (copy
-  §2.2) and the order must not feel like a verdict (seller-workflow §5). *Lever:* no
-  total column, no per-offer number, terms-in-cells, position-not-points — a permanent
-  constraint, restated in §13.
-- **The inverted-ranking guarantee isn't generalized in the backend** (doctrine §5
-  DEFER-LINE). 4c depends on un-built runtime behavior. *Lever:* spec the *design* and
-  name the dependency; if the backend can only *flag* (not *withhold*) at alpha, tier 3
-  degrades from "withhold" to "flag as partial" — **doctrine-bound, escalate** (§14), not
-  a silent edit.
-- **Access-control** *(was a v2.0 risk; now resolved — DEC-7).* A leaked comparison link
-  is the product's highest-confidentiality failure (multi-buyer exposure, handoff §7).
-  *Resolution:* the access model is decided (§8.3, DEC-7 — email-gated recipient access,
-  expiring, agent-revocable; a forward doesn't carry access). The **comparison-share spec**
-  owns the recipient-verification / expiry / revocation flow and the **main repo**
-  implements it; `comparison-view.md` is unaffected (authenticated).
-- **Net-to-seller is a ranking-moving number** (Fork I) — the §5 danger zone. *Lever:*
-  net suppresses (visible-but-excluded) whenever any component is unread; if even that is
-  too risky for alpha, fall back to components-only (lose legibility, keep safety).
-- **The dimension set is unspecified** (§10, §15). *Lever:* propose a fixed small default
-  set, mark "to confirm," keep the matrix dimension-agnostic (renders whatever the profile
-  defines).
-- **Live re-ranking is heavy** (Fork E), especially on mobile. *Lever:* fall back to
-  apply-then-reorder (keep the control visible; lose some "see what drives the order").
-- **Three specs of scope** (workspace + share + gate). *Lever:* the §2/§3 splits are
-  themselves risk control — write `comparison-view.md` first and fully; defer share and
-  gate to their own specs.
-- **The mobile matrix + mobile Customize.** The core legibility device and the weighting
-  control are hardest where width is scarce. *Lever:* matrix → ranked cards + per-card
-  breakdown + tap-for-why-above; Customize → full-screen / bottom-sheet editor with the
-  basis line always visible (§12 phase 6). Severity reduced because compare is more
-  desk-likely than verify.
-
----
-
-## 12. Phases for writing the spec (dependency-ordered)
-
-The template's section order is the *output* order; the *writing* order front-loads the
-decisions everything hangs on (the sequence verify/share followed: surface forks, lock,
-then mockup).
-
-- **Phase 0 — Meta-scope (Forks A, B).** Two docs (§2); gate-as-sibling (§3).
-- **Phase 1 — Organizing idea (template §0) + core layout (Forks C, D).** The matrix +
-  ranked-spine hybrid, offers-as-rows. The return-to anchor.
-- **Phase 2 — The data-state taxonomy (§5).** *New early task in v2.0:* fix how each
-  field/offer state affects ranking and disclosure **before** the element and interaction
-  detail, since the matrix cell and the suppression behavior are expressions of it.
-- **Phase 3 — The three doctrine TODOs (4a, 4b, 4c) and their forks (E, F, G, I, J).**
-  The screen's reason to exist; design before detail.
-- **Phase 4 — Layout/regions (template §1) + core repeating unit (template §3).**
-  Regions: weighting header, ranked matrix body, per-offer expansion/detail pane, order
-  spine. Decompose the offer row / matrix cell: label · value-or-state · provenance
-  handle · action, per surface, citing §5.
-- **Phase 5 — State grammar on screen (template §2) + edge cases (§7).** Map §5's states
-  + comparison states (asymmetric, N=1, tie/near-tie, suppressed/withheld) to distinct
-  treatments.
-- **Phase 6 — Interactions & gates (template §4) + mobile (template §5).** Live
-  re-weight, expand offer, why-above delta, revise-set re-entry, set-provisional and
-  offer-not-yet-verified markers, jump-back-to-verify. **Mobile Customize** *(new in
-  v2.0):* the basis line is always visible (minimum collapsed state); Customize opens as
-  a full-screen / bottom-sheet slider editor; live re-rank may fall back to apply-then on
-  mobile. Matrix → ranked cards + per-card breakdown + tap-for-why-above; no hover; static
-  export deferred (inherits handoff §3). Accessibility: order conveyable without color;
-  screen-reader semantics for rank and for each absence state. Note the **compare → share**
-  boundary inherits the per-offer high-stakes acknowledgment gate (states §3).
-- **Phase 7 — Forks (template §6) + deferred (template §7) + DEC entries (§14).** Lock
-  every fork as LOCKED (DEC-7 onward) or DEFER (reason + home).
-- **Phase 8 — Follow-ons (not this spec), in order:** `comparison-share-surface.md`
-  (briefed in §8), `reconciliation-gate.md`, the comparison **mockup**, and a comparison
-  **worked-specimen** (worked-specimen §5 names it "the natural sequel"; the §9 fixtures
-  seed it).
-
----
-
-## 13. Testing criteria (spec-quality, not code)
-
-A reviewer runs the finished spec against this checklist.
-
-**Forks & TODOs**
-- [ ] Every fork (A–K) is **LOCKED** (with a DEC entry) or **DEFER** (reason + home). No
-      "we haven't decided" (template §6).
-- [ ] All three doctrine TODOs closed (4a, 4b, 4c). **No `TODO(design)` for this screen
-      survives.**
-
-**Doctrine obligations have a named screen home**
-- [ ] Clause 1 **inherited per offer** (provenance, honest uncertainty, term-based).
-- [ ] **Legibility (§4.1):** "why is A above B?" has a concrete plain-terms UI answer.
-- [ ] **Honest weighting (§4.2):** legible at rest *and* controllable; **weights shown,
-      sub-scores never** — the §4b "what's visible instead" list is satisfied; no
-      per-offer number, no total column.
-- [ ] **Inverted-ranking (§5):** a specified state **withholds** an order rather than
-      guesses; a suppressed dimension is **visible-but-excluded**, never disappeared,
-      never defaulted. Trace one unreadable comparison-affecting field through the screen
-      and confirm it **never moves the order**.
-
-**Data-state grammar** *(new in v2.0)*
-- [ ] All §5.1 field states render **distinctly** inside the dense matrix; the dangerous
-      collapses hold (empty-on-form vs. unreadable; not-applicable vs. unreadable vs.
-      empty; agent-corrected vs. present-confident).
-- [ ] **Blank is never imputed or zeroed** (asymmetric completeness, Q5); "intentionally
-      omitted" is never asserted (rule a).
-- [ ] **Offer not-yet-verified** (§5.2) is flagged and never ranked as if vouched;
-      distinct from set-provisional (Fork K).
-
-**Fixture-based definition of done** *(new in v2.0 — review Testing)*
-- [ ] The spec produces the correct screen for each §9 fixture: clean ranking,
-      suppressed dimension, withheld order, tie/near-tie, N=1, forwarded seller share.
-
-**The comparison share** *(new in v2.0)*
-- [ ] The §8.1 inheritance table is honored: per-offer invariants inherited; divergences
-      (organizing idea, weighting, suppression-to-seller, §5 guarantee, access) present.
-- [ ] Ranking reaches the seller **as input, not verdict** (no "best offer," no "accept,"
-      no score); the basis line is shown; suppression is visible to the seller.
-- [ ] Access posture (DEC-7 — email-gated, expiring, revocable) reflected in the
-      workspace's "Share comparison" affordance (agent enters recipient emails; link is
-      expiring + revocable); the full gate flow belongs to the comparison-share spec.
-
-**The two governing tests**
-- [ ] **Doctrine §7:** more *trustworthy* (legible order, honest weighting, honest gaps),
-      not just more *finished* — **non-laundering holds for the order** (nothing makes the
-      ranking look more decided or cleaner than the reads support, handoff §6).
-- [ ] **NORTH-STAR:** moves the agent toward a comparison they're **proud to share** by
-      being trustworthy, not impressive.
-
-**Cross-repo seams (CLAUDE.md)**
-- [ ] `HIGH_STAKES_FIELD_KEYS` **cited, not forked**; "comparison-affecting field"
-      single-sourced; the §5 generalization flagged as main-repo work; §1B/§1A and
-      correction/audit-log dependencies noted; the net-to-seller formula referenced as a
-      dependency, not redefined (altitude discipline, §6).
-
----
-
-## 14. Rollback / revision plan
-
-**Forks are separable so a wrong call is local.** Each fork → a DEC-n entry that "lives
-in" a named spec section. Reversing a fork = a **new DEC-n′ superseding DEC-n** (both
-left in place — `decisions.md` convention), a **status/version bump** on
-`comparison-view.md`, and revision of only the citing sections. Separability (layout C/D
-≠ legibility G ≠ suppression 4c ≠ net I) keeps one reversal from cascading.
-
-**DEC entries — two locked now (Morris), the rest expected when the spec is drafted.**
-*Numbers are assigned in lock order; the two Morris decisions lock before the spec, so they
-take DEC-7/DEC-8 and the spec-time forks shift to DEC-9 onward (coordinate with any
-`decisions.md` backfill so they don't collide).*
-
-| DEC | Decision | Status | Fork / § |
-|---|---|---|---|
-| **DEC-7** | Comparison-share access — email-gated recipient access, expiring + agent-revocable; not public/forwardable; PIN and per-view-default rejected | **LOCKED (Morris)** | §8.3 |
-| **DEC-8** | Default seller-priority dimensions & order — net to seller ▸ contingencies ▸ financing strength ▸ close speed; user-controllable; suppress-on-unreadable | **LOCKED (Morris)** | §5, §10 |
-| **DEC-9** | Comparison layout model — matrix + ranked spine, offers-as-rows | expected | C, D |
-| **DEC-10** | Weighting visibility — basis line + compact weights at rest; Customize expands; weights-shown/sub-scores-never | expected | F, 4b |
-| **DEC-11** | Suppression / inverted-ranking behavior — cell → position (visible-but-excluded) → withheld order | expected | 4c |
-| **DEC-12** | Net to seller — computed when all components traceable, else suppressed visible-but-excluded | expected | I |
-| **DEC-13** | Legibility affordance — matrix at rest + pairwise delta | expected | G, 4a |
-
-**The mockup is the revision trigger.** Lock forks → mockup → if a fork fails, supersede
-its DEC and revise; the mockup review uses §13 as its checklist.
-
-**Severity tiers.** *Cosmetic* (Fork F): revise template §§2/4, supersede the DEC.
-*Structural* (Fork C): revise §§1/2/3/5, **re-mockup** — the most expensive reversal,
-which is why C/D are validated earliest and C is LOCK-pending-mockup. *Trust-grammar /
-doctrine-bound* (4c can't be built generally; net I must stop computing): **not a free
-screen-level choice** — reconcile with doctrine §5 (version-bump the doctrine or record a
-deliberate divergence in `decisions.md`, CLAUDE.md cross-repo rule); the screen may render
-a degraded guarantee only after the doctrine acknowledges it.
-
-**Highest-risk forks to watch at mockup:** C/D (layout — most cascading; prototype the
-matrix early), I (net — validate suppression on a real packet, fixture 2), 4c (suppression
-/ withheld — depends on main-repo generalization), E (live re-rank — may scope-reduce to
-apply-then, esp. mobile). On any lock/reversal, update **`STATUS.md`** and **`decisions.md`**.
-
----
-
-## 15. Open questions that must be resolved before / alongside the spec
-
-Separating what blocks **`comparison-view.md`** from what blocks the **sibling specs**:
-
-**Hard blockers for `comparison-view.md` (the agent workspace): none — and the two items
-v2.0 flagged for Morris are now resolved.** The spec can be written now; the remaining
-items are cross-repo dependencies that affect the mockup, not the writing.
-
-1. **Comparison-share access-control mechanism** — **✅ RESOLVED (Morris, DEC-7).**
-   Email-gated recipient access with expiration and agent revocation; not public/
-   forwardable; a forward doesn't carry access; PIN and per-view-approval rejected (§8.3).
-   This blocked the comparison-SHARE spec, not `comparison-view.md`; the workspace's share
-   affordance now has a real posture to reflect (enter recipient emails; expiring +
-   revocable). **Home:** handoff §8 / DEC-7. The main repo implements the gate.
-2. **The default seller-priority dimension set** — **✅ RESOLVED (Morris, DEC-8).**
-   Net to seller ▸ contingencies ▸ financing strength ▸ close speed; user-controllable
-   weights; suppress-on-unreadable (§10). **Home:** IA §7 / DEC-8 / spec Phase 1.
-3. **The §5 generalization state in the main repo** *(cross-repo dependency, not a design
-   decision).* 4c assumes the read-failure path degrades to *unknown* (suppress/withhold),
-   not to a ranking-moving default, for comparison-affecting fields. Today only §3G(3) is
-   confirmed (doctrine §5 DEFER-LINE). Confirm coverage before the mockup claims the
-   guarantee generally; if absent, tier 3 degrades to "flag" (doctrine-bound, §14).
-   **Home:** the cross-repo seam (CLAUDE.md) / main repo.
-4. **Net-to-seller component formula** *(implementation dependency, not a blocker).* Which
-   seller-paid costs feed net. The screen specifies behavior (net = arithmetic of
-   traceable components; suppress if any unread); the formula is the main repo's. **Home:**
-   `domain-vocabulary.md` / main repo.
-
----
-
-## 16. Out of scope for this plan (named, with homes)
-
-- **The spec prose, layout sketches, and DEC text** — Phase 1–7 output → home:
-  `07-screen-design/comparison-view.md`.
-- **The comparison share surface spec** — fully briefed in §8 → home:
-  `07-screen-design/comparison-share-surface.md`.
-- **The reconciliation gate spec** — dependency named in §3 → home:
-  `07-screen-design/reconciliation-gate.md`.
-- **The comparison mockup and worked-specimen** (the §9 fixtures seed the latter) → home:
-  Phase 8.
-- **Link access-control mechanism** — **decided** (DEC-7, §8.3); the recipient-
-  verification / expiry / revocation *implementation* → the comparison-share spec + main
-  repo.
-- **The default dimension set's membership & order** — **decided** (DEC-8, §10);
-  formalizing it into IA §7 → next IA bump / spec Phase 1.
-- **Visual design tokens** → home: brand adoption (assets/README).
-
----
-
-## 17. Response to the v1.0 review (disposition) + changelog
-
-### 17.1 Disposition of every review item
-
-**Major concerns (blocking) — all incorporated.**
-
-| # | Concern | Disposition | Where addressed |
-|---|---|---|---|
-| 1 | Access control under-resolved | **Accept** | §8.3 (options, risk, home — now **DECIDED, DEC-7**), §11, §15 #1 (resolved). Correctly scoped: blocks the share sibling, **not** `comparison-view.md`. |
-| 2 | Share surface seeded but under-planned | **Accept** | §8 rewritten as a full sibling brief with the §8.1 inheritance/divergence table. |
-| 3 | Data-state distinctions need tightening | **Accept** (with one grounded partial-reject) | §5 taxonomy (field-level × ranking/disclosure; offer-level verification state). **Partial reject:** "intentionally omitted" is not a claimable state — asserting intent violates copy §4 / `DEFAULT-TRAP` (§5.1 rule a). |
-
-**Minor concerns — disposition.**
-
-| # | Concern | Disposition | Where |
-|---|---|---|---|
-| 1 | Mobile Customize missing | **Accept** | §10 (assumption adjusted), §12 phase 6 (mobile Customize + minimum collapsed state), §11. |
-| 2 | Suppression needs examples | **Accept** | §9 fixtures 2–3; referenced from 4c. |
-| 3 | Define what's visible instead of sub-scores | **Accept** | §4b "what is visible instead of a sub-score" (6-item list). |
-| 4 | Net suppression display behavior | **Accept** | §4c + Fork I: **visible-but-excluded, never disappears**; generalized as a rule. |
-| 5 | Which decisions become DEC entries | **Accept** | §14 DEC table (DEC-7…DEC-13; DEC-7/8 now locked by Morris). |
-
-**Suggested changes** map onto the above: 1→§8.3; 2→§8.1; 3→§5; 4→§12; 5→§9; 6→§6
-altitude discipline + §13 cross-repo check; 7→§14. **All accepted.**
-
-**Questions — resolution.**
-
-| # | Question | Resolution |
+| Promise located in | Section | What the spec must deliver |
 |---|---|---|
-| 1 | Can the share link be forwarded freely? | **Morris decision** (§8.3, §15 #1). Working assumption: no — revocable + gated. |
-| 2 | Buyer identities / aliases? | **Resolved from docs** (§8.4): show buyer names (§1A) to the seller; confidentiality is an access-control concern, not a display one. |
-| 3 | Suppressed dimension visible to seller? | **Resolved from docs** (§8.4): yes, visible-but-excluded (non-laundering, handoff §6; DEC-6). |
-| 4 | Same weights as workspace, or simplify/hide? | **Resolved from docs** (§8.4): basis always shown; agent sets weights, cannot hide; display may simplify magnitudes. |
-| 5 | Blank term vs. verified term across offers? | **Resolved from docs** (§5.1, §7): the blank is empty-on-form, not imputed/zeroed/penalized; aggregates suppress-or-caveat, never default. |
+| `trust-doctrine.md` | §4.1 `TODO(design)` | The legibility affordance for *relative* position — the "why A above B" delta, distinct from the per-offer explanation of §3.3 |
+| `trust-doctrine.md` | §4.2 `TODO(design)` | How weighting is shown at rest before Customize opens; the default weighting must be legible without interaction |
+| `trust-doctrine.md` | §3.1 `TODO(design)` | Provenance in the comparison share surface (partially resolved in share-surface.md; comparison share must extend it to N offers and to the ranked display) |
+| `trust-doctrine.md` | §3.2 `TODO(design)` | Three-way visual grammar (present/empty-on-form/unreadable) inside the dense comparison matrix — the place trust is most often quietly lost |
+| `share-surface.md` | §7 Deferred | "The comparison surface — its own spec follows" — the comparison-share spec must be briefed here and written as a sibling |
+| `states-and-edge-cases.md` | §6 States ledger | All comparison-stage states must appear in the spec's §2 with visually distinct treatments before the ledger is complete |
+| `information-architecture.md` | §7 Locked decisions | DEC-8 dimension set and order must formalize into IA §7 on the next IA bump; the spec is the trigger |
+| `NORTH-STAR.md` | Compare stage row | "Legible order, honest user-controllable weighting, no ranking from a guessed number" must each have a named screen home in the spec |
 
-### 17.2 Changelog: v1.0 → v2.0
+---
 
-**Added**
-- **§5 Data-state taxonomy** — field-level states mapped to ranking participation +
-  disclosure, plus the offer-level not-yet-verified distinction. *(Major 3, Q5.)*
-- **§9 Worked example fixtures** — six concrete scenarios doubling as DoD. *(Minor 2,
-  Suggested Change 5, Testing.)*
-- **§8.3 access-control subsection** and **§8.1 inheritance table** inside a rewritten,
-  full comparison-share brief. *(Major 1, Major 2.)*
-- **§15 Open-questions-for-Morris** — separating `comparison-view.md` blockers (none) from
-  sibling-spec blockers (access control). *(Requirement 6.)*
-- **§6 altitude-discipline note**; **§4b "what's visible instead of sub-scores" list**;
-  **§14 "first DEC entries" table**; mobile-Customize requirements (§10, §12). *(Overengineering,
-  Minor 1/3/5, Suggested Changes 6/7.)*
-- **§17** itself (this disposition + changelog). *(Requirement 5.)*
+## C. The Trust Obligations This Spec Must Render
 
-**Modified**
-- **§4c / Fork I** — suppressed dimensions/net are now explicitly **visible-but-excluded,
-  never disappeared**. *(Minor 4, Q3.)*
-- **§7 asymmetric completeness** — sharpened to the canonical no-impute/no-zero behavior
-  and cross-linked to §5. *(Q5.)*
-- **§8** — from an obligations list to a full sibling brief. *(Major 2.)*
-- **§10 assumptions** — desktop-likely softened to desktop-likely-not-only; data-state and
-  access-control assumptions added. *(Minor 1.)*
-- **§11 risks** — access-control risk strengthened and correctly scoped. *(Operational
-  Risk.)*
-- Section numbering shifted to accommodate new §5, §8 expansion, §9, §15, §17.
+The comparison screen is the only home for Clause 2 (ranking-trust). All three
+obligations below have outstanding `TODO(design)` markers or must be rendered for the
+first time. No `TODO(design)` for this screen survives into the spec.
 
-**Removed**
-- Nothing of substance. No v1.0 decision was reversed; every unchallenged section is
-  retained (the organizing idea, the two-doc split, the gate-as-sibling decision, all
-  fork resolutions, the doctrine-TODO resolutions, the §7/NORTH-STAR tests). This is a
-  revision, not a rewrite. *(Requirement 4.)*
+---
 
-### 17.3 v2.0 → v2.1 (Morris decisions incorporated)
+### Obligation 1: Legibility (doctrine §4.1)
 
-Morris resolved the two §15 open questions; v2.1 propagates them and bumps the status
-line. No v2.0 content was reversed — the two items moved from "flagged for Morris" to
-"locked."
+**What the doctrine says:**
+> "The user can always answer 'why is this offer ranked above that one?' in terms they
+> could repeat to a seller. An order Docside cannot explain in plain terms is an order
+> Docside does not present."
+> `TODO(design):` "the legibility affordance for *relative* position, distinct from the
+> per-offer explanation in 3.3."
 
-- **DEC-7 — comparison-share access control.** Email-gated recipient access with
-  expiration and agent revocation; not public/forwardable; a forward doesn't carry access;
-  PIN and per-view-approval rejected. Propagated to §8.1 (access row), §8.3 (now DECIDED,
-  options dispositioned), §9 (fixture 6), §14, §15 #1, §16. Recorded at `handoff.md` §8
-  and `11-design-decisions/decisions.md`.
-- **DEC-8 — default seller-priority dimensions & order.** Net to seller ▸ contingencies ▸
-  financing strength ▸ close speed; user-controllable; suppress-on-unreadable. Propagated
-  to §4b (basis-line example), §9 (basis line + fixture 1/4 deltas), §10, §14, §15 #2.
-  Recorded at `11-design-decisions/decisions.md` (to be formalized into IA §7 on the next
-  IA bump).
-- **Status** bumped to **v2.1**; title and header note updated.
+**What the spec must specify:**
+A UI mechanism that answers "why is offer A above offer B?" in plain terms — at rest
+(no interaction required) and on demand (pairwise). The affordance must be *relative*
+(comparing two offers on their delta) and *distinct* from the §3.3 per-offer explanation
+(which describes one offer in isolation). Copy constraint: terms only, never scores
+(copy §2.2: "explain rank with terms... never with numbers"). A dimension that is
+unweighted by the seller's profile must not appear as a reason for the order even if it
+differs between offers.
+
+**Proposed resolution (from v2.1 §4a):**
+- **At rest:** A dimension matrix where offers are rows, weighted dimensions are columns,
+  cells hold terms (Explanation voice — "21-day close"), and the leading offer per
+  dimension is marked. Down a column = "who leads this priority?" Cross-offer legibility
+  without interaction. The ranked spine also includes a terse adjacent-order reason preview
+  for each neighboring relationship: "Above Chen mainly on higher net and faster close."
+  The preview is not the full explanation; it is the at-rest proof that the position has
+  a traceable reason.
+- **On demand:** Tapping/clicking an offer (or the gap between two adjacent offers) yields
+  a pairwise "why this order" delta: *"Ranked above [next] on: higher net, faster close;
+  [next] leads on: lower buyer-broker comp."* Scoped to the weighted dimensions. If an
+  unweighted dimension also differs, it is noted as "they also differ on X, which you
+  didn't weight" — never as a reason for the order.
+
+**Which doctrine TODO this resolves:** `TODO(design)` in §4.1.
+**Resolution statement to lock:** "The legibility affordance for relative position is
+the at-rest leading-cell matrix plus an adjacent-order reason preview, with the full
+pairwise delta available on demand. The delta is stated in terms, scoped to weighted
+dimensions, and signed by direction." → DEC-13.
+
+---
+
+### Obligation 2: Honest Weighting (doctrine §4.2)
+
+**What the doctrine says:**
+> "The ranking reflects **seller priorities**, and the weighting is **visible and
+> user-controllable.** The free-slider / live-total Customize model is a *trust
+> mechanism*, not a UX convenience: it lets the agent see and change what's driving
+> the order, which means the order is never a black box asserting authority it can't
+> account for."
+> `TODO(design):` "how weighting state is shown at rest (before the user opens
+> Customize) — the default weighting must be legible without interaction."
+
+**What the spec must specify:**
+- The at-rest weighting display (the "before Customize" state), legible without
+  interaction: a basis line showing the priorities in order + a compact relative-weight
+  indicator (ordered bars or chips, labeled by dimension, magnitude shown, not per-offer scores)
+- Customize expands the header in place (same two-widths principle as verify-workspace)
+- What is **never** visible: per-offer sub-scores, totals, 0–100 numbers, star ratings,
+  "best offer" badges (copy §2.2)
+- What is **visible instead** of a sub-score (the positive enumeration, v2.1 §4b):
+  1. The basis line — "Ranked by: [priorities in order]"
+  2. The dimension columns — each a term-bearing priority
+  3. The deciding terms — the pairwise delta, in business language
+  4. The leading-cell marks — which offer leads each weighted dimension
+  5. The relative-weight indicator — ordered bars/chips (priority magnitude)
+  6. The caveats — suppression / partial / withheld / tie / near-tie markers
+
+**Proposed resolution (from v2.1 §4b):**
+A "Ranked by" basis statement + compact relative-weight indicator as the always-visible
+header above the matrix (DEC-8 default order: *"Ranked by: highest net to seller,
+fewest contingencies, stronger financing, faster close"*). Customize expands this header
+in place into the free-slider / live-total editor.
+
+**Which doctrine TODO this resolves:** `TODO(design)` in §4.2.
+**Resolution statement to lock:** "Weighting at rest is a basis line ('Ranked by:
+[priorities in order]') plus a compact relative-weight indicator. Customize expands
+the header in place. Weights are shown; sub-scores are never shown." → DEC-10.
+
+---
+
+### Obligation 3: Inverted-Ranking Guarantee (doctrine §4.3 + §5)
+
+**What the doctrine says:**
+> "Docside will never rank one offer above another on the strength of a number it
+> guessed. When a term that affects the comparison can't be read with confidence,
+> Docside marks it unknown and tells you so — it does not fill the gap with a default
+> that could quietly move an offer up or down the list. **If we cannot trace how a
+> ranking was determined, we will not present it.**"
+> `DEFER-LINE:` "the guarantee is honored in §3G(3) today. It is **not yet
+> generalized** across every comparison-affecting field."
+
+**What the spec must specify:**
+A three-tier treatment that degrades from cell to order when a comparison-affecting
+dimension is unreadable:
+1. **At the cell:** "We couldn't read this field" — elevated visual weight for
+   high-stakes fields. Never blank, never a dash, never a default, never a guess.
+2. **At the offer's position in the dimension:** The dimension is suppressed for that
+   offer — explicitly **visible-but-excluded** ("partial — [dimension] unread"). The
+   suppressed dimension does NOT disappear (disappearing hides the gap; that is a
+   non-laundering violation, handoff §6).
+3. **At the pairwise order:** If the suppressed dimension would be decisive between
+   two offers, the order between those two offers is **withheld** — they render as a
+   bracketed group: "Can't be separated on your priorities until [field] is read for
+   [buyer]." The one place the product explicitly withholds an order rather than
+   assert one it can't trace.
+
+Every suppression links back to that offer's verify workspace: "verify to resolve."
+Suppression is an honest hold with a way forward, not a dead end.
+
+**Cross-repo caveat the spec must name:** The spec specifies the design; the per-field
+runtime generalization (degrade-to-unknown, not to a ranking-moving default) is tracked
+main-repo work. If the backend can only *flag* (not *withhold*) at alpha, tier 3 degrades
+to tier 2 — but that degradation is **doctrine-bound** (must be recorded in decisions.md
+as a deliberate divergence, not a silent screen-level edit).
+
+**Which doctrine obligation this resolves:** §4.3 / §5 — not a TODO but a guarantee
+rendered for the first time in pixels.
+**Resolution statement to lock:** "Unreadable comparison-affecting fields suppress the
+dimension visible-but-excluded; if decisive, the pairwise order is withheld, not guessed."
+→ DEC-11.
+
+### Runtime contract this spec assumes
+
+This plan specifies the target design behavior. The implementation can only honor that
+behavior if the main repo exposes a few explicit runtime contracts. These are not visual
+details; they determine whether the screen can truthfully present an order.
+
+| Runtime contract | Target behavior in the spec | Alpha-degraded behavior, if missing | Required record |
+|---|---|---|---|
+| **Unknown propagation for comparison-affecting fields** | Any unreadable, conflicting, or low-confidence comparison-affecting field degrades to unknown, never to a default that can move rank | The affected dimension is visible-but-excluded. If the field would be decisive and the runtime cannot decide this, the pairwise order is not shown as decisive | decisions.md divergence + main-repo task |
+| **Withhold-capable ranking output** | Runtime can identify when a suppressed dimension would be decisive between adjacent offers, allowing the screen to render a bracketed withheld group | If runtime can only flag uncertainty, the screen may show suppressed-visible-but-excluded but must not flatten the pair into a confident order | decisions.md divergence + doctrine-bound note |
+| **Net-to-seller formula symbol** | Spec cites the main-repo formula by symbol/name and treats net as arithmetic of traceable components | If no formula is established, net-to-seller falls back to components-only for alpha | main-repo formula task + spec deferred note |
+| **Closeness-band parameter** | Runtime exposes a named parameter for tie/near-tie state boundaries | If not exposed, tie/near-tie examples are illustrative only and mockup must not imply exact boundaries | main-repo tuning task |
+
+The spec may name these as dependencies without defining the engine. What it may not do
+is silently soften the guarantee in pixels.
+
+---
+
+## D. Implementation Sequence
+
+The spec is written in template order (§0 → §7), but decisions are made in dependency
+order. Below: what to write, what to read first, what can go wrong, and the trust test
+that section must pass before moving on.
+
+### Step 0 — Organizing idea (template §0)
+
+**What:** One sentence that the spec returns to when any design question is disputed.
+**Read first:** doctrine §4–§5 (the trust obligation); NORTH-STAR.md compare row ("legible
+order, honest user-controllable weighting, no ranking from a guessed number"); verify-workspace.md
+§0 and share-surface.md §0 as format patterns — each derives the idea from the trust
+obligation, not from convenience or feature description.
+**Could go wrong:** Choosing an idea that describes a layout ("ranked cards with a
+weighting panel") rather than the trust claim. The organizing idea must answer "why
+this, not something cleaner that would hide the gaps?"
+**Trust test:** Does the sentence account for all three ranking-trust mechanisms (legibility,
+honest weighting, inverted guarantee)? If it only covers one, it is not the organizing idea.
+**From v2.1:** "The order accounts for itself" — confirmed by external review as 5/5.
+
+---
+
+### Step 1 — Core layout decision (template §1, Forks C/D)
+
+**What:** Lock the layout model (matrix vs. cards vs. hybrid; offers-as-rows vs. columns).
+This is the cascading fork; everything downstream depends on it.
+**Read first:** doctrine §4.1 (legibility requires cross-offer visibility at rest); copy §2.2
+(matrix hazard: must not read as a scoreboard implying scores); verify-workspace.md §1 for
+the layout-region pattern; NORTH-STAR compare row.
+**Could go wrong:** The matrix reads as a scoreboard (implies numeric totals), which is
+forbidden. Ranked cards are clean but fail relative legibility at rest. A matrix with
+only leading-cell marks can show who leads each priority without explaining why one
+adjacent offer sits above another. The hybrid must *structurally* defuse the scoreboard —
+no total column, no per-offer number, terms in cells — while the ranked spine carries a
+terse adjacent-order reason preview.
+**Trust test:** Can a reviewer see "why is A above B?" without opening any interaction,
+including a plain-language adjacent-order reason? If not, the layout fails legibility at
+rest and the §4.1 TODO is not resolved.
+
+---
+
+### Step 2 — Data-state taxonomy (template §2 foundation)
+
+**What:** Map every field/offer state to ranking participation and disclosure treatment.
+This is the foundation for every matrix cell. Fix it early because the matrix is dense —
+the dangerous collapses are likeliest to fail here. The spec must include one consolidated
+field-state matrix before it writes any cell UI.
+**Read first:** states §1 (the six field states: verified, agent-corrected, empty-on-form,
+not-captured, not-applicable, unreadable/conflicting); states §4 (comparison states);
+domain-vocabulary.md §2 (hazard tags — `FREE-TEXT-VERBATIM`, `PCT-OR-FLAT`, `STRUCTURALLY-NULL`,
+`DEFAULT-TRAP`, `FORM-LITERAL`); copy §2.1 (three-way grammar). From v2.1: the taxonomy
+in §5 (field-level states × ranking participation × disclosure) and §5.2 (offer-level
+not-yet-verified state).
+**Could go wrong:** Collapsing empty-on-form and unreadable (copy §2.1 single-biggest
+trust failure: "the single most common way this product would lie"); asserting "intentionally
+omitted" (a `DEFAULT-TRAP` violation — presence ≠ intent); imputing a zero for a blank
+aggregate component; treating a structurally null component the same as an unread component.
+**Trust test:** Are all seven field states (including conflicting/incoherent → null) and
+both offer states (vouched / not-yet-verified) rendered distinctly? Run the dangerous-collapse
+check: empty-on-form ≠ unreadable ≠ not-applicable ≠ not-captured, in the same matrix.
+For any aggregate field, can the reviewer tell which component states suppress the aggregate,
+which are allowed as structurally null, and which require a caveat?
+
+---
+
+### Step 3 — Doctrine TODO resolutions (4a, 4b, 4c)
+
+**What:** Write the concrete UI specifications for legibility (§4.1), at-rest weighting
+(§4.2), and the three-tier suppression/withhold (§5). These are the spec's reason to exist.
+**Read first:** doctrine §4 (the three TODOs verbatim); copy §2.2 (terms-only, no sub-scores);
+worked fixtures from v2.1 §9 (concrete instances of all three tiers across six scenarios).
+**Could go wrong:**
+- Legibility affordance restates per-offer terms (the §3.3 per-offer explanation) rather
+  than expressing the *delta* between two offers in a relative sense
+- Weighting display shows sub-scores or per-offer totals while claiming to show weights
+- Suppression makes a dimension *disappear* rather than keeping it visible-but-excluded
+  (disappearing hides the gap — a non-laundering violation identical to the DEC-6 prohibition)
+**Trust test:** Run v2.1 fixture 3 (withheld order) from §9. Does the spec produce a
+screen where: Chen's buyer-broker comp is unreadable → net is suppressed visible-but-excluded
+→ Chen's net dimension is present in the matrix but marked excluded → the Reyes-vs-Chen order
+is genuinely withheld (not just caveated)? If the spec passes fixture 3, it passes all three
+doctrine TODOs.
+
+---
+
+### Step 4 — Element information design (template §3)
+
+**What:** Decompose the offer row and matrix cell: label · value-or-state · provenance
+handle · action per surface. Define the offer-header (buyer name, offer-level state,
+"not yet verified" flag). Define the pairwise delta affordance form.
+**Read first:** verify-workspace.md §3 (field row decomposition — the four-part anatomy);
+share-surface.md §3 (seller-facing adaptation of the same anatomy); domain-vocabulary.md §4
+(label/spoken/gloss/hazards for each high-stakes field — the cell's label and Explanation-
+voice spoken value come from here).
+**Could go wrong:** Omitting the provenance handle from the matrix cell. Clause 1 must be
+inherited per offer even inside the dense matrix — the agent must be able to trace any value
+to its contract location without leaving the comparison view.
+**Trust test:** Pick any cell in the worked fixture 1 matrix. Can the agent trace the value
+("21-day close") to its form location (§3B → ¶33A) without a round-trip to verify? If not,
+provenance is not present in the element design.
+
+---
+
+### Step 5 — Interactions and gates (template §4)
+
+**What:** Live re-weight (Customize in place); expand-offer → side pane/drill-down → link
+to verify workspace; pairwise delta affordance trigger; revise-set re-entry; offer-not-yet-
+verified prompt; compare → share boundary (agent enters recipient emails; link is expiring
++ revocable per DEC-7); share-readiness outcomes for withheld order, suppressed dimensions,
+set-provisionality, and not-yet-verified offers.
+**Read first:** states §3 (compare→share boundary inherits the per-offer high-stakes
+acknowledgment gate — this gate is not eliminated by the comparison view); IA §2.1
+(the set composition mechanics — what "revise set" means); decisions.md DEC-7 (the
+access model the share-initiation UI must reflect).
+**Could go wrong:** Treating the compare→share boundary as a button-press rather than
+a gate that inherits states §3. Not speccing the share-initiation UI (agent enters emails;
+link is expiring+revocable) — that belongs to comparison-view.md even though the
+recipient experience belongs to the share spec. Leaving ambiguous whether a withheld order,
+set-provisional comparison, or not-yet-verified offer may be shared.
+**Trust test:** At the compare → share boundary, does the spec require the agent to
+explicitly enter recipient emails before a comparison link is created? If not, DEC-7 is
+not reflected in the workspace. Does the boundary also say whether each ranking state is
+allowed, blocked, or allowed only with explicit disclosure?
+
+---
+
+### Step 6 — Mobile and degraded (template §5)
+
+**What:** Matrix → ranked cards on narrow screens; Customize → full-screen or bottom-
+sheet slider editor; basis line always visible at minimum collapsed state; accessibility
+baseline.
+**Read first:** verify-workspace.md §5 (mobile strategy: summary-primary + provenance
+drill-down) for the precedent pattern; v2.1 §12 phase 6 (mobile Customize requirements).
+**Could go wrong:** Treating the Customize control as desktop-only when agents may re-
+prioritize from a phone. Losing the basis line on mobile when Customize is closed — the
+basis line is the minimum state, not an optional element.
+**Trust test:** On a narrow screen, before any interaction: is the basis line ("Ranked
+by: [priorities]") visible? Is there a path to the per-offer detail without horizontal
+scrolling through a matrix?
+
+---
+
+### Step 7 — Design forks and DEC entries (template §6)
+
+**What:** Lock or explicitly defer every fork from §E below. Write DEC-9 through DEC-17
+(and any additional entries that surface during writing). LOCK-pending-mockup forks get
+a "pending" status and name the mockup as the trigger. Preserve the DEC allocation table
+in §E so numbering, status, and triggers remain auditable.
+**Read first:** decisions.md DEC-1 through DEC-8 (the existing log; DEC-9 onward continues
+the numbering without collision); template §6 (every fork must be LOCKED with a DEC entry
+or DEFER with a reason and named home — never "we haven't decided").
+**Could go wrong:** A LOCK-pending-mockup fork being written as LOCKED; a fork that
+silently resolves a doctrine question without creating a DEC entry; a DEC number being
+claimed in prose but not in the allocation table.
+**Trust test:** Does every fork resolution in the spec have a DEC entry? Is any DEC entry
+missing from decisions.md? Does the DEC allocation table match the fork list exactly?
+
+---
+
+### Step 8 — Deferred (template §7)
+
+**What:** Explicitly name everything not in this spec — comparison share surface spec,
+reconciliation gate spec, comparison mockup, static PDF, visual tokens, agent-alias
+system — each with a reason and a named home.
+**Read first:** v2.1 §16 (out-of-scope list); share-surface.md §7 (the pattern for an
+explicit deferred section — reason + home for each item, no orphans).
+**Could go wrong:** A deferred item with no named home (orphaned); a trust obligation
+deferred as if it were polish (a guarantee cannot be deferred, only a UX affordance for
+a guarantee that already has a home elsewhere).
+**Trust test:** Every deferred item has a named home. Nothing that carries a doctrine
+obligation is deferred without an explicit statement of where that obligation is being honored.
+
+---
+
+### Step 9 — Follow-on specs (not this spec, but brief them here)
+
+Comparison share surface: brief it (see §G of this plan; full brief is v2.1 §8). Home:
+`comparison-share-surface.md`.
+Reconciliation gate: name the dependency (see §A). Home: `reconciliation-gate.md`.
+Comparison mockup: seed the fixtures from v2.1 §9. Home: Phase 8 of v2.1 §12.
+
+---
+
+## E. Design Forks
+
+**Altitude discipline (inherited from v2.1 §6):** Every fork specifies behavior and its
+trust purpose, not implementation. `HIGH_STAKES_FIELD_KEYS`, the scoring engine, and the
+net-to-seller formula are **cited as dependencies by name, never redefined here.**
+
+### DEC allocation and status table
+
+This table is the source of truth for decision numbering during spec-writing. A fork may
+be behaviorally recommended below, but it is not fully locked until its DEC entry exists
+with the status shown here.
+
+| Item | Decision | DEC | Status | Trigger / note |
+|---|---|---:|---|---|
+| Fork A | Two separate documents for workspace and share surface | Backfill | LOCKED | Promote earlier scope decision without renumber collision |
+| Fork B | Reconciliation gate as sibling upstream spec | Backfill | LOCKED | Promote earlier scope decision without renumber collision |
+| Fork C/D | Hybrid ranked spine + matrix; offers as rows | DEC-9 | LOCK-pending-mockup | Lock after mockup proves matrix does not read as scoreboard |
+| Obligation 2 / Fork F | At-rest weighting basis line + compact weights; Customize expands in place | DEC-10 | LOCKED | Doctrine §4.2 TODO resolution |
+| Obligation 3 | Visible suppression + withheld decisive order | DEC-11 | LOCKED, runtime-dependent | Depends on runtime contract for withhold-capable ranking |
+| Fork I | Net-to-seller computed only from traceable components | DEC-12 | LOCK-pending-mockup | Validate on real packet and cite main-repo formula |
+| Obligation 1 / Fork G | Matrix + adjacent preview + on-demand pairwise delta | DEC-13 | LOCKED | Doctrine §4.1 TODO resolution |
+| Fork E | Live re-ranking while Customize changes weights | DEC-14 | LOCK-pending-mockup | Mobile may degrade to apply-then with explicit note |
+| Fork H | Per-offer atom in expansion / side pane / mobile drill-down | DEC-15 | LOCKED | Full verify workspace linked, not duplicated |
+| Fork J | Free-text terms outside ranked weighting | DEC-16 | LOCKED | Quoted verbatim; never scored into order |
+| Fork K | Set-provisional marker until complete | DEC-17 | LOCKED | Distinct from offer-level not-yet-verified |
+
+### Fork A — Surface scope *(LOCKED)*
+**Question:** One combined spec or two separate documents?
+**Options:** Single doc / Two docs (workspace + share surface)
+**Recommendation:** **Two separate documents.** `comparison-view.md` for the agent
+workspace; `comparison-share-surface.md` for the seller surface. Precedent:
+verify-workspace.md + share-surface.md. IA §3 forbids the merge. share-surface.md §7
+already defers "the comparison surface — its own spec follows."
+**Anchor:** IA §3; share-surface.md §7; doctrine §2 (two distinct trust surfaces)
+**DEC:** Backfill candidate (no DEC number yet; coordinate with decisions.md backfill index)
+
+### Fork B — Reconciliation gate placement *(LOCKED)*
+**Question:** Gate as stage-0 of the comparison view, or as a separate upstream spec?
+**Options:** Gate-as-compare-preamble / Gate-as-sibling (`reconciliation-gate.md`)
+**Recommendation:** **Separate upstream spec.** The gate's trust job is *membership made
+deliberate*, not ranking-trust. It fires at a different nav location (listing → compare
+boundary, IA §5). Verify-workspace.md §7 already names it as a deferred screen.
+**Anchor:** IA §2.1; critical-path §3; doctrine §2 (one trust job per surface)
+**DEC:** Backfill candidate
+
+### Fork C — Core layout model *(LOCK-pending-mockup)*
+**Question:** Matrix (offers × dimensions) vs. ranked cards vs. hybrid?
+**Options:**
+- Matrix: strongest cross-offer legibility; hazard: reads as a scoreboard (implies scores)
+- Ranked cards: strong per-offer atom, mobile-friendly; weak at relative legibility at rest
+- Hybrid: ranked spine + dimension matrix, no total column, terms in cells
+**Recommendation:** **Hybrid.** Defuses scoreboard risk structurally. No per-offer number,
+no total column, terms in cells, position not points.
+**Trade-off:** Highest design complexity; most cascading if reversed. Validate the matrix
+early in the mockup.
+**Anchor:** doctrine §4.1 (legibility at rest); copy §2.2 (no scores)
+**DEC:** DEC-9
+
+### Fork D — Orientation *(LOCKED)*
+**Question:** Offers as rows or offers as columns?
+**Recommendation:** **Offers as rows, dimensions as columns.** A ranking is a vertical
+list; scales in N; degrades cleanly to mobile cards (one card per offer, stacked).
+**Anchor:** NORTH-STAR depth loop; agent-workflow §2
+**DEC:** DEC-9 (same decision as Fork C)
+
+### Fork E — Re-weighting feel *(LOCK-pending-mockup)*
+**Question:** Live re-ranking (order moves as weights move) vs. apply-then-reorder?
+**Options:**
+- Live re-ranking: strongest proof that the order is not a black box; the order responds visibly to the agent's priorities
+- Apply-then-reorder: lower motion/perf cost; less "magic" but more predictable
+**Recommendation:** **Live re-ranking**, animated transition (offers move, don't jump).
+**Risk:** Motion/perf on mobile may require scoping-down to apply-then for the mobile
+Customize experience.
+**Anchor:** doctrine §4.2 ("the order is never a black box asserting authority it can't
+account for")
+**DEC:** DEC-14
+
+### Fork F — Customize at rest *(LOCKED)*
+**Question:** Collapsed at rest or always open?
+**Recommendation:** **Collapsed at rest** — basis line + compact weights visible; Customize
+expands in place. At-rest legibility without the control's footprint.
+**Anchor:** doctrine §4.2 TODO ("legible without interaction"); verify-workspace.md
+two-widths precedent
+**DEC:** DEC-10
+
+### Fork G — Legibility affordance form *(LOCKED)*
+**Question:** What is the UI form of the §4.1 "relative position" affordance?
+**Recommendation:** **Matrix at rest + adjacent-order reason preview + pairwise delta on
+demand.** Leading cells give at-rest legibility across offers; the ranked spine gives a
+terse adjacent-order reason for each neighbor relationship; tapping/clicking the offer
+or the gap between two adjacent offers yields the full pairwise "why this order" delta.
+Pure terms, signed by direction, scoped to weighted dimensions.
+**Anchor:** doctrine §4.1 TODO; copy §2.2 (terms only, never scores or weights in the
+delta text)
+**DEC:** DEC-13
+
+### Fork H — Per-offer Clause-1 atom location *(LOCKED)*
+**Question:** Where does the per-offer understanding-trust atom live inside the comparison?
+**Recommendation:** **Inline expansion → side detail pane (desktop) / drill-down (mobile)**,
+with a link back to the full verify workspace for re-checking.
+**Why:** The comparison composes atoms; it does not replace them. The full verify-workspace
+detail (document pane + provenance scroll) should never be duplicated inside the comparison.
+**Anchor:** doctrine §4 ("inherits all of Clause 1 per offer"); IA §4
+**DEC:** DEC-15
+
+### Fork I — Net to seller *(LOCK-pending-mockup; trust-critical)*
+**Question:** Compute net to seller as a comparison dimension, or show components only?
+**Options:**
+- Computed net: strongest legibility for the "highest net" priority; hazard: if any
+  component (buyer-broker comp `PCT-OR-FLAT`, seller credits) is unread, the net value
+  can inherit a guess and invert the ranking — the §5 danger in its most common form
+- Components only: no aggregation risk; weakest legibility (agents must do the math)
+**Recommendation:** **Compute net only when all components are confidently read. If any
+component is unread, net is suppressed visible-but-excluded** ("net can't be determined:
+[component] unread"). Net = arithmetic of traceable values, never a model output. The
+§3G(3) `PCT-OR-FLAT` precedent (domain-vocabulary.md §5 worked entry) generalized. If a
+component is empty-on-form, not-captured, or not-applicable, the aggregate-field
+participation rules in §F decide whether net is suppressed, caveated, or allowed as
+structurally null; the spec never silently treats absence as zero.
+**Validation:** Run on a real packet with an unread buyer-broker comp (v2.1 fixture 2).
+**Anchor:** doctrine §5; domain-vocabulary.md §5 buyer_broker_comp entry; v2.1 §4c
+**DEC:** DEC-12
+
+### Fork J — Free-text / unweightable terms in the matrix *(LOCKED)*
+**Question:** How do `FREE-TEXT-VERBATIM` fields (§3R other terms; §3G(2)) appear in
+a dimension matrix built from structured values?
+**Recommendation:** **A non-ranked "Other terms" section** below or alongside the
+weighted matrix — quoted verbatim, explicitly outside the weighting, present to read,
+never scored into the order. The screen "visibly leaves room for everything it can't see"
+(seller-workflow §4).
+**Anchor:** doctrine §3.2 v0.3(a) ("a quoted field never enters the comparison as if it
+were a verified value"); copy §2.4
+**DEC:** DEC-16
+
+### Fork K — Set provisionality *(LOCKED)*
+**Question:** Show the comparison as provisional until the agent marks the set complete?
+**Recommendation:** **Provisional marker until complete** — header reads "Comparison of
+[N] offers in so far" — never implying finality the transaction hasn't reached.
+**Note:** Distinct from the per-offer not-yet-verified marker (§5.2 of v2.1). Both are
+shown simultaneously when an unverified offer is also in an open set. They are different
+markers and must look different.
+**Anchor:** agent-workflow §2 (the set is open until the deadline)
+**DEC:** DEC-17
+
+---
+
+## F. Field and Comparison-Specific States
+
+Each state must be visually distinct from every other state. "No two states look alike"
+is the template's cardinal rule; in the dense comparison matrix, it is also the trust proof.
+
+### Consolidated matrix-cell field states
+
+The spec must include this table, or a stricter version of it, before defining individual
+matrix cells. It is the practical answer to doctrine §3.2 inside the densest screen in
+the product.
+
+| Field state | Matrix-cell treatment | Ranking participation | Provenance / trace | Action |
+|---|---|---|---|---|
+| **Verified present** | Term value in Explanation voice, e.g., "21-day close" | Participates normally if the dimension is weighted | Contract location handle visible or one click away | Open provenance / detail |
+| **Agent-corrected** | Corrected term value with correction marker; original value traceable | Participates using corrected value | Shows correction trail plus original source location | Open correction detail / verify |
+| **Empty-on-form** | "Not specified on this form" | Never imputed as zero, none, waived, or intentionally omitted; participation depends on the term and aggregate rules below | Shows form location where the blank/absence occurred | Open source / verify if needed |
+| **Not-captured** | "Not captured" or "Not captured in intake" | Excluded from ranking-affecting computation until captured or verified | Shows intake/system origin, not a contract citation | Go to verify / capture |
+| **Not-applicable / structurally null** | "Does not apply" with distinct visual treatment | May contribute to an aggregate only if domain vocabulary and formula both define it as structurally null | Shows why it is structurally null, not merely missing | Open explanation / source |
+| **Unreadable / low-confidence** | "We couldn't read this field" with elevated weight for high-stakes fields | Excluded from that dimension; if decisive, pairwise order is withheld | Shows attempted source location when available | Verify to resolve |
+| **Conflicting / incoherent** | "Conflicting values" or "Needs resolution" | Excluded until resolved; may suppress aggregate and trigger withhold if decisive | Shows both conflicting traces when available | Resolve in verify workspace |
+
+### Aggregate-field participation rules
+
+Aggregates such as net-to-seller are the highest-risk place for silent lying because an
+absence can be accidentally converted into arithmetic. The spec must state these rules:
+
+1. An aggregate may display as computed only when the formula is named and every required
+   component is traceable as verified, agent-corrected, or explicitly structurally null.
+2. Verified and agent-corrected components participate normally, with the component
+   provenance visible from the aggregate cell.
+3. Empty-on-form and not-captured components are never treated as zero by default. The
+   aggregate is suppressed visible-but-excluded unless the main-repo formula explicitly
+   defines that absence state as non-participating for that field.
+4. Not-applicable / structurally-null components may contribute a neutral value only when
+   both domain-vocabulary.md and the formula identify that exact field state as structurally
+   null. Otherwise, the aggregate is suppressed.
+5. Unreadable, low-confidence, conflicting, or incoherent components suppress the aggregate
+   visible-but-excluded. If the aggregate would be decisive between adjacent offers, the
+   pairwise order is withheld.
+6. Aggregate cells show the component reason, not just the aggregate value: "Net can't be
+   determined: buyer-broker comp unread" or "Net based on price, seller credit, and verified
+   buyer-broker comp."
+
+### States from states §4 (comparison-view's own edge cases)
+
+| State | Trigger | Proposed on-screen treatment | Fixture in v2.1 §9 |
+|---|---|---|---|
+| **Unreadable-dimension** | A ranking-feeding field is unreadable for one offer | Three-tier (doctrine §5): (1) cell: "We couldn't read this field" — elevated weight if high-stakes; (2) dimension suppressed for that offer — **visible-but-excluded** ("partial — [dimension] unread"); (3) if decisive pairwise: order **withheld** — "Can't be separated on your priorities until [field] is read for [buyer]." Link to verify for each suppression. | Fixtures 2 and 3 |
+| **Asymmetric-completeness** | Offer A has a verified term; offer B left it blank | B's cell: "Not specified on this form" (empty-on-form — visually distinct from unreadable). B not imputed, not zeroed, not penalized. The dimension's leading-cell mark excludes B. If the field feeds net, net is suppressed-or-caveated for B, never silently zeroed. "Intentionally omitted" is never asserted. | Not a separate fixture; exercises §5.1 rules |
+| **N=1 degenerate** | After reconciliation or exclusion, only one offer remains | Fall back to the single-offer summary with a note ("Only one offer is in this comparison"). No ranking chrome. No weighting header asserting an order over one item. | Fixture 5 |
+| **Tie / near-tie** | Two or more offers land within a closeness band on weighted priorities | A tie/near-tie band: same visual position, or labeled "Reyes and Chen are very close on your priorities." Pairwise delta: "Nearly even — [A] leads on [terms], [B] leads on [terms]; it's close." No manufactured decisive order from rounding. | Fixture 4 |
+
+### States from states §4.1 (gate territory; comparison-view's slice)
+
+| State | Trigger | Comparison-view treatment |
+|---|---|---|
+| **Cross-channel duplicate** | Same offer via upload AND email | The gate resolves this before the comparison view receives the set. The comparison view owns only: the "revise set" re-entry affordance when the agent wants to drop a copy mid-compare. |
+| **Unreadable buyer-name** | §1A buyer name can't be read | Show the fallback handle (states §4.1 / IA §2.1 — a system-generated label, e.g., "Offer 2"). Never assert a guessed name. The agent can assign a label at the gate; if no label was assigned, the fallback shows in the buyer-name slot throughout. |
+| **Source-ambiguity** | Channel of intake unclear | The gate resolves this. If source is still ambiguous after the gate (unlikely), show source as "Unknown" rather than asserting a channel. |
+| **Inclusion-granularity** | Which version of an offer enters when a buyer submitted revisions | The gate decides which version enters. The comparison view receives the curated set; "revise set" re-entry handles swaps mid-compare. |
+
+### Offer-level states (from v2.1 §5.2; the interruptible-workflow distinction)
+
+| State | Trigger | Treatment |
+|---|---|---|
+| **Not-yet-verified** | Offer is in the set but verify is incomplete | Flagged "not yet verified" on the offer's row/card. Held out of the asserted ranking, or shown provisionally with a "verify to rank" prompt. **Never ranked as if vouched.** Visually distinct from the set-provisional marker. |
+| **Vouched** | Offer passed the verify → share boundary (all fields confirmed, corrected, or marked unreadable) | Ranks normally. No special marker needed beyond the standard ranking position. |
+| **Set-provisional** | The comparison set may still grow (deadline not yet reached) | Header marker: "Comparison of [N] offers in so far." Distinct from not-yet-verified — this describes the set, not an individual offer. |
+
+---
+
+## G. Comparison Share Obligations
+
+The comparison share surface is the sibling spec (`comparison-share-surface.md`), not
+part of `comparison-view.md`. But `comparison-view.md` must brief it and own the
+workspace's share-initiation affordance. The full sibling brief lives in v2.1 §8 and
+serves as the first draft of the comparison-share spec.
+
+### What the comparison share adds beyond the single-offer share surface
+
+| Element | Single-offer share (share-surface.md) | Comparison share |
+|---|---|---|
+| Organizing idea | "orient first" — what this offer is | **"fit-to-priorities, an input not a verdict"** — the order plus the visible basis, leaving room for what can't be seen (buyer letter, gut feel) |
+| Per-offer atom | Yes: provenance, six absence states, term-based, corrections-as-corrected, glosses, §-citation (DEC-3/4/5) | **Inherited per offer** — the comparison is N atoms |
+| Top-of-screen | The one offer's headline terms | **The ordered set + "Ranked by…" basis line** |
+| Ranking visible to seller | N/A | **Yes — as fit-to-priorities, never as a verdict.** No "best offer" badge, no "accept" action, no scores. |
+| Weighting display | N/A | **Basis line always visible.** Agent cannot hide what produced the order (doctrine §4.2; handoff invariant 5). Display may simplify — omit precise bar magnitudes — but the basis is never hidden. |
+| Suppressed dimension | N/A | **Visible-but-excluded** — "We couldn't read [field] for [buyer], so this offer isn't ranked on [dimension]." Hiding it makes the ranking look cleaner than the reads support — a non-laundering violation. |
+| §5 inverted-ranking guarantee | Absent (single offer; no ranking to guarantee) | **Shown in Principle voice:** "If we cannot trace how a ranking was determined, we will not present it." |
+| Buyer identity | One buyer (§1A) | **Each buyer's name (§1A) shown to the seller.** The seller owns these offers on their property; real-world offer presentations name buyers. Confidentiality concerns are about link access, not buyer-name display. Unreadable §1A → fallback handle. |
+| Access control | Lightweight link acceptable for alpha (handoff §8) | **Email-gated recipient access, expiring + agent-revocable (DEC-7, locked by Morris).** A forwarded link does not carry access — the forward recipient meets the same email gate. Specific to multi-buyer comparison (multi-buyer exposure risk, handoff §7). |
+| Non-laundering + prohibition list | DEC-6 prohibition list | **Inherited; extended to the order** — no false decisive order, no hidden suppression, no collapsed absence rows in the ranking display. |
+
+### Ranking presentation to the seller: governing principle
+
+**Ranking does reach the seller — as fit-to-priorities, never as a verdict.** The
+surface leaves room for what it can't see (seller-workflow §4). "The decision is never
+the algorithm's" (seller-workflow §5). This is a stronger obligation than the single-
+offer surface, which had no order to caveat.
+
+### Access control (DEC-7, locked)
+
+The agent workspace owns the **share-initiation UI only**: the agent enters one or more
+seller recipient emails and sees the link is expiring and revocable. The recipient-verification
+flow, expiry handling, and revocation UI belong to the comparison-share spec and the main repo.
+
+A forwarded recipient who opens the link does not automatically receive access — they
+meet the same email gate. The PIN option was considered and rejected (a PIN forwards as
+easily as the link). Per-view approval was considered and rejected as the default (too
+much friction for "open cold on a phone").
+
+### Workspace share-readiness matrix
+
+The comparison workspace owns whether a comparison can be shared at all. The recipient
+experience belongs to `comparison-share-surface.md`, but the workspace must not create a
+share link that the share surface cannot represent honestly.
+
+| Workspace state at share initiation | Outcome | Required workspace behavior |
+|---|---|---|
+| All included offers vouched; no suppressed decisive dimension; set marked complete | **Allowed** | Agent enters recipient emails; link is expiring and revocable |
+| Suppressed dimension exists but is not decisive | **Allowed with explicit disclosure** | Share preview names the suppressed dimension and confirms it will remain visible on the share surface |
+| Pairwise order is withheld because an unread/conflicting field is decisive | **Allowed only if the share surface preserves the withheld group** | Preview shows the bracketed group and withhold reason; no flattened rank or "best" label may be sent |
+| Runtime can only flag uncertainty and cannot determine whether withhold is required | **Blocked for decisive-looking shares** | Agent must verify, remove the affected offer, or share only after the runtime contract is available |
+| Any included offer is not-yet-verified | **Blocked by default** | Agent must verify the offer, remove it from the shared set, or intentionally share a clearly marked draft if a later product decision creates that mode |
+| Set is provisional but all included offers are vouched | **Allowed with explicit disclosure** | Share surface must say "Comparison of [N] offers in so far" and must not imply finality |
+| N collapses to 1 after exclusions or revisions | **Comparison share blocked; single-offer share path used** | Remove ranking chrome and route to the single-offer share model |
+| Recipient emails missing or invalid | **Blocked** | Email-gated DEC-7 access cannot be created until recipients are entered |
+
+### How the comparison share surface uses the screen-spec-template
+
+The comparison-share surface is a full screen spec using the same template as share-surface.md:
+- §0 Organizing idea: "fit-to-priorities, an input not a verdict"
+- §1 Layout: brand frame → ranked set with "Ranked by…" basis → per-offer groups (N) → call prompt
+- §2 State grammar: inherits the six absence states from share-surface.md; adds suppressed-visible-but-excluded and withheld-order states
+- §3 Information design: per-offer element design inherited from share-surface.md; buyer-name slot added; basis-line element new
+- §4 Interactions: zero interactions intentional (read-only); no acknowledgment action; `tel:` call prompt inherited
+- §5 Mobile: mobile-primary inherited; ranked cards on narrow screens
+- §6 Design forks: access-control model (DEC-7 locked); ranking-presentation principle; weighting display simplification
+- §7 Deferred: static PDF; multi-viewer tracking; agent-alias system (possible later option)
+
+**Starting point for the spec author:** v2.1 §8 (the full sibling brief), plus the inheritance
+table above, plus share-surface.md as the format model.
+
+---
+
+## H. Verification Steps
+
+A reviewer runs these checks against the completed `comparison-view.md`.
+
+### 1. Every doctrine obligation has a named screen home
+
+- [ ] **Legibility (§4.1):** "Why is A above B?" has a concrete answer in plain terms — at
+  rest (leading cells in the matrix plus adjacent-order reason preview) and on demand
+  (pairwise delta). The delta is relative (A vs. B), not absolute (description of A alone).
+  The delta is scoped to weighted dimensions.
+- [ ] **Honest weighting (§4.2):** The basis line and compact weights are legible at rest
+  before Customize opens. Customize expands in place. The six-item "what is visible instead
+  of sub-scores" list from §C above is fully satisfied. No per-offer number, no total column,
+  no star rating, no "best offer" badge.
+- [ ] **Inverted-ranking guarantee (§5):** A specified state explicitly *withholds* an order
+  (not just warns). A suppressed dimension is *visible-but-excluded* (not disappeared, not
+  silently dropped). Trace v2.1 fixture 3 through the spec: buyer-broker comp unread → net
+  suppressed visible-but-excluded (net column present, marked excluded for Chen) → Reyes-vs-Chen
+  order genuinely withheld (they appear in a bracketed group with the withhold reason stated).
+- [ ] **Runtime contract:** The spec names the runtime dependencies for unknown propagation,
+  withhold-capable ranking, net-to-seller formula, and closeness-band parameter. Any alpha
+  degradation is doctrine-bound and recorded, not hidden in screen copy.
+- [ ] **Clause 1 inherited per offer:** The per-offer provenance handle, the three-way
+  field-state distinction, and term-based explanation (Explanation voice from domain-vocabulary.md)
+  are all present in the matrix cell and/or the per-offer expansion.
+
+### 2. Every state has a visually distinct treatment named
+
+- [ ] All states from §F have a named visual treatment in the spec's §2
+- [ ] The consolidated field-state matrix appears before individual matrix-cell designs
+- [ ] The dangerous collapses do not occur: empty-on-form ≠ unreadable ≠ not-applicable ≠
+  not-captured — each is visually distinct inside the dense matrix
+- [ ] Agent-corrected ≠ present-confident: the corrected marker and the original value are
+  traceable even inside a small matrix cell
+- [ ] Blank is never imputed, never zeroed, never labeled "intentionally omitted"
+- [ ] Aggregate-field participation rules are explicit: verified/corrected, empty-on-form,
+  not-captured, structurally-null, unreadable, and conflicting components have distinct effects
+- [ ] Not-yet-verified (offer-level) is visually distinct from set-provisional (set-level)
+- [ ] Tie/near-tie renders distinctly from a decisive single-position rank
+
+### 3. Every fork is either locked (with DEC entry) or explicitly deferred (with reason + home)
+
+- [ ] Fork C (layout model): LOCKED DEC-9 or LOCK-pending-mockup named
+- [ ] Fork D (orientation): LOCKED DEC-9
+- [ ] Fork E (re-weighting): LOCK-pending-mockup DEC-14 with degraded path named (mobile → apply-then)
+- [ ] Fork F (Customize at rest): LOCKED DEC-10
+- [ ] Fork G (legibility affordance): LOCKED DEC-13
+- [ ] Fork H (atom location): LOCKED DEC-15
+- [ ] Fork I (net to seller): LOCK-pending-mockup with suppressed path confirmed and DEC-12 entry
+- [ ] Fork J (free-text): LOCKED DEC-16
+- [ ] Fork K (set-provisional): LOCKED DEC-17
+- [ ] No fork reads "to be decided" without a named home and expected resolution trigger
+- [ ] The DEC allocation table matches the fork list and decisions.md entries exactly
+
+### 4. The spec passes the doctrine §7 test
+
+> "Does this make the contract more trustworthy to understand — by provenance, honest
+> uncertainty, or term-based explanation — or does it only make it look more finished?"
+
+- [ ] The suppression/withhold treatment makes the comparison *more trustworthy*
+- [ ] The non-laundering obligation holds for the order: nothing makes the ranking look more
+  decided or cleaner than the reads support (no gap disappears, no suppressed dimension hides)
+- [ ] Polish that hides uncertainty fails this test — check every "cleaner" design choice
+
+### 5. The spec passes the NORTH-STAR test
+
+> "Does this move the agent toward a comparison they're proud to put their brand on — through
+> upload, verify, compare, or share — or does it sit outside that path?"
+
+- [ ] The comparison view lands the agent on a ranked view they can send to the seller
+  with confidence that the order is traceable
+- [ ] The compare → share path is explicit: the share-initiation UI is specced
+- [ ] The share-readiness matrix is present: withheld order, suppressed dimensions,
+  not-yet-verified offers, set-provisionality, N=1 collapse, and invalid recipients are
+  each allowed, blocked, or allowed only with explicit disclosure
+- [ ] The spec is on the spine, not a detour
+
+### 6. STATUS.md and decisions.md are updated (post-write checklist)
+
+- [ ] STATUS.md: comparison row updated from "⛔ not started" to reflect the spec's state
+- [ ] decisions.md: DEC-9 through DEC-17 (and any additional entries locked during
+  spec-writing) added as full entries following the DEC-1–DEC-8 format
+- [ ] decisions.md backfill index: note comparison-view decisions that came from earlier
+  docs and need promotion to full entries (Forks A, B in particular)
+- [ ] IA §7: DEC-8 dimension set and order formally incorporated on the next IA version bump
+
+---
+
+## I. Rollback Plan
+
+### DEC entries are superseded, never deleted
+
+The decisions.md convention: a wrong decision gets a **new DEC-n′ entry** that explicitly
+cites the superseded DEC-n. The old entry remains, annotated "Superseded by DEC-n′ —
+[date] — [reason]." This creates an auditable trail of *why* decisions changed — more
+valuable than a clean log.
+
+Example: if Fork C (layout model) is reversed after mockup review, the new entry reads:
+"DEC-9′ — [date] — Layout model revised: ranked cards replace the matrix hybrid (DEC-9)
+because [reason from mockup]. Sections §1, §2, §3, §5 of comparison-view.md revised."
+
+### Which sections change, by fork severity
+
+| Fork | Severity | Sections of comparison-view.md that change | Re-mockup required? |
+|---|---|---|---|
+| C (layout model) | **Structural** | §0 (organizing idea may need revision), §1 (layout regions), §2 (state grammar in new layout), §3 (element in new layout), §5 (mobile adaptation) | Yes — most cascading; this is why C is LOCK-pending-mockup |
+| D (orientation) | **Structural** | §1, §3, §5 | Likely yes, but less cascading than C |
+| E (re-weighting) | **Behavioral** | §4 (interactions: Customize feel), §5 (mobile: live vs. apply-then) | Interaction prototype, not full re-mockup |
+| F (Customize at rest) | **Cosmetic** | §2 (state: weighting at rest), §4 (interactions: Customize expand) | No |
+| G (legibility affordance) | **Trust-grammar** | §4 (pairwise delta trigger), §3 (leading-cell marks) | No, but must re-verify the §4.1 TODO is still resolved by the replacement |
+| H (atom location) | **Behavioral** | §4 (expansion/drill-down), §5 (mobile drill-down) | No |
+| I (net to seller) | **Trust-grammar** | §3 (net cell element design), §2 (suppressed-net state) | Validate on a real packet; not a full re-mockup |
+| J (free-text) | **Cosmetic** | §3 (other-terms section placement) | No |
+| K (set-provisional) | **Cosmetic** | §2 (state grammar for provisional marker), §4 (set-state marker timing) | No |
+
+### Trust-grammar reversals require doctrine reconciliation
+
+If a fork reversal weakens a trust guarantee (e.g., "the backend can't build the withhold
+tier; we'll show a caveat instead of withholding"), that is **not a free screen-level
+edit.** The path is:
+1. Record the deliberate divergence in decisions.md per CLAUDE.md cross-repo rules
+2. Bump the trust-doctrine.md version to acknowledge the weaker guarantee, OR
+3. Note it as a bounded exception with the named technical constraint and escalation path
+
+The screen may render a degraded guarantee only after the doctrine acknowledges it.
+
+### How to communicate a change to the main repo
+
+1. Update decisions.md with the superseding DEC entry (visible to both repos)
+2. Update comparison-view.md with the revised section + status/version bump
+3. Update STATUS.md
+4. If the reversal affects a CLAUDE.md cross-repo seam (e.g., `HIGH_STAKES_FIELD_KEYS`,
+   the inverted-ranking generalization, the net-to-seller formula): note which main-repo
+   implementation is now misaligned, and create a reconciliation task in the main repo
+
+---
+
+## J. Unresolved Questions
+
+This planning pass could not answer these from the existing docs. They must be resolved
+before or during spec-writing.
+
+### Blockers for writing comparison-view.md
+
+None. The two former blockers are resolved (Morris decisions DEC-7 and DEC-8). The items
+below are cross-repo dependencies that do not block writing as long as the spec names the
+runtime contract from §C. They do affect implementation and any mockup that claims the
+runtime guarantee is already available.
+
+### Runtime-contract dependencies to confirm before implementation or guarantee-claiming mockup
+
+**J-1. §5 generalization coverage in the main repo.**
+Doctrine §5's DEFER-LINE: the inverted-ranking guarantee is generalized only for §3G(3)
+(`buyer_broker_comp`, `PCT-OR-FLAT`) today. The spec specifies the target design and names
+the runtime contract; the per-field runtime generalization is tracked main-repo work.
+Before implementation or a mockup that claims the guarantee generally, the main repo must
+confirm which comparison-affecting fields degrade to *unknown* (not to a ranking-moving
+default) on a real packet. If the backend can only *flag* (not *withhold*) for some fields
+at alpha: tier 3 (withheld order) degrades to tier 2 (suppressed-visible-but-not-withheld)
+for those fields. The spec must name the degraded path and make it doctrine-bound
+(escalate, not silently accept).
+
+**J-2. Net-to-seller formula established in the main repo.**
+Fork I recommends computing net as arithmetic of traceable components. The formula (which
+seller-paid costs feed net) is a main-repo concern; the spec cites it, does not define it.
+Before implementation or a mockup that shows computed net, confirm: which components?
+which main-repo symbol to cite? If the formula isn't established, the net dimension falls
+back to components-only for alpha (Fork I fallback).
+
+**J-3. Closeness-band width for tie/near-tie.**
+States §4 names the tie/near-tie state but does not define "close." The spec must state that
+the closeness-band width is a **main-repo tuning parameter** (not a spec decision), name
+where it lives, and note that changing it shifts state boundaries without requiring a spec
+revision. This is a two-sentence clarification, not a blocker.
+
+### Must resolve before comparison-share-surface.md (not a blocker for comparison-view.md)
+
+**J-4. Comparison share mobile layout.**
+share-surface.md is explicitly mobile-primary. The comparison share adds a ranked list and
+N offers, which is harder on mobile than one offer. Must the comparison-share spec define a
+distinct mobile layout (ranked cards, one per offer, stacked)? Or does the desktop layout
+translate reasonably to mobile via responsive width? The comparison-share spec resolves this.
+
+**J-5. Agent-alias system for buyer names.**
+The plan resolves buyer identity (§8.4 Q2 of v2.1: show buyer names to the seller). A
+future request for agent aliases ("Offer A / B / C") is plausible and is explicitly deferred
+in v2.1 §8.4 Q2. The comparison-share spec must name this deferral with a home. Not a blocker.
+
+**J-6. Comparison share recipient-side UX for the email gate (DEC-7).**
+DEC-7 specifies email-gated recipient access with expiration and agent revocation. The
+workspace spec owns the share-initiation UI. The recipient experience — what the seller sees
+when they click the link, how the email gate is presented, how expiry is communicated — belongs
+to the comparison-share spec and the main repo. The comparison-view spec does not need to
+resolve this, but it must *not* spec the recipient experience.
+
+### Inherited from doctrine (confirmed as tracked, not newly unresolved)
+
+**J-7. The three-way visual grammar (doctrine §3.2 TODO).**
+This TODO is partially resolved in verify-workspace.md (for the verify surface) and in
+share-surface.md (for the single-offer share). The comparison view must extend it to the
+dense matrix — the most challenging environment. The grammar itself is settled (present /
+empty-on-form / unreadable must never look alike); the *pixel treatment inside a matrix cell*
+is the spec's decision to make. Not unresolved at the principle level; unresolved at the
+element-design level, which Step 4 of §D resolves.
+
+---
+
+## Execution Notes
+
+When writing `07-screen-design/comparison-view.md` from this plan:
+1. Use sections A–J as the working sequence and map them into the screen-spec template
+   (§0 through §7) during spec-writing.
+2. Retain the v2.1 worked fixtures (§9 of v2.1) as an appendix or inline in §F.
+3. Retain the comparison-share sibling brief (§8 of v2.1) as §G or an appendix.
+4. Carry forward all locked forks and their DEC entries from v2.1.
+5. Treat the at-rest adjacent-order reason preview, DEC allocation table, runtime contract,
+   consolidated field-state matrix, aggregate-field participation rules, and share-readiness
+   matrix as first-class plan requirements.
+6. Do not duplicate verification that has already been done; the v2.1 external review and
+   Morris decisions are settled inputs, not items to re-open.
