@@ -190,12 +190,18 @@ A shared comparison carries more than a shared summary, and more risk:
   and stays current; the PDF form waits on the static-provenance work (§3, the hard
   column) — it's the expensive move and can't ship until it prints provenance without
   violating the doctrine. *(Recorded as DEC-1 in `11-design-decisions/`.)*
-- `DECIDE — now more pressing:` **the link access model.** Tokenized links are
-  viewable by anyone holding them — and **email makes forwarding the norm**, which
-  turns this from a nicety into a real risk: a forwarded *comparison* link exposes
-  multiple buyers' confidential terms (§7). Recommend **revocable** links, with
-  **comparison links email-gated or expiring**; single-summary links can stay
-  lightweight for the alpha. Confirm before share ships.
+- ✅ **DECIDED — comparison-share link access model (DEC-7).** A forwarded *comparison*
+  link exposes multiple buyers' confidential terms (§7), and **email makes forwarding the
+  norm** (DEC-1) — so the comparison share uses a **revocable, gated link: email-gated
+  recipient access with expiration and agent revocation.** The agent enters one or more
+  seller recipient emails; the recipient verifies access by email; the link can expire;
+  the agent can revoke it; **a forwarded recipient does not automatically receive access.**
+  It is **not** a fully public/forwardable link; **PIN-only is rejected** (a PIN forwards
+  as easily as the link) and **per-view agent approval is rejected as the default** (too
+  much friction — it breaks "open it cold on a phone"). **Single-summary links can stay
+  lightweight for the alpha.** *(Recorded as DEC-7 in `11-design-decisions/`; the
+  comparison-share screen spec and the main repo own the recipient-verification / expiry /
+  revocation implementation.)*
 
 ---
 
@@ -207,5 +213,8 @@ A shared comparison carries more than a shared summary, and more risk:
 - **Seller-side interaction** beyond read/trace (questions back to the agent,
   acknowledgments) — post-alpha; the seller zone is read-only for now.
 - **Re-share / forwarding** controls — what happens when a recipient forwards the
-  link onward. **More pressing now that email — a forward-native channel — is in
-  scope:** §7's leak concern is no longer hypothetical. Not fully scoped here.
+  link onward. The **leak risk is now addressed by the access model (DEC-7, §8):** a
+  forwarded comparison recipient meets the email gate and does not automatically get
+  access, and the agent can revoke the link or let it expire. The detailed re-share *UX*
+  (re-inviting a new recipient, surfacing who currently has access) is still downstream —
+  the principle is set; the screen flow is not.

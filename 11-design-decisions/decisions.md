@@ -161,6 +161,66 @@ the prohibition list as its non-laundering check.
 
 ---
 
+## DEC-7 — Comparison-share access control: email-gated, expiring, agent-revocable
+
+**Date:** 2026-06-30 · **Status:** DECIDED · **Lives in:** `06-handoff/handoff.md` §8 · `07-screen-design/comparison-view-plan.md` §8.3 (→ `comparison-share-surface.md`)
+
+**Context.** A comparison share exposes multiple buyers' confidential terms (handoff §7),
+and email makes forwarding the norm (DEC-1). A forwarded comparison link is therefore the
+highest-confidentiality failure on any Docside surface — categorically worse than a
+single-summary leak. handoff §8 had left the access model open ("Confirm before share
+ships").
+
+**Decision (Morris).** The comparison share is a **revocable, gated link**: **email-gated
+recipient access with expiration and agent revocation.** The agent enters one or more
+seller recipient emails; the recipient verifies access by email; the link can expire; the
+agent can revoke it at any time; **a forwarded recipient does not automatically receive
+access** (they meet the same email gate). It is **not** a fully public, freely forwardable
+link.
+
+**Options rejected.** Free-forward tokenized link (a forward exposes every buyer);
+**PIN/passcode** (a PIN forwards as easily as the link); **per-view agent approval as the
+default** (too much friction — breaks "open it cold on a phone"). Revocability and
+expiration are adopted *with* email-gating, not as alternatives to it.
+
+**Consequences.**
+- *Scope:* this governs the **public share link**, not the authenticated agent workspace.
+  `comparison-view.md`'s "Share comparison" affordance reflects it (enter recipient
+  emails; the link is expiring + revocable); the recipient-verification / expiry /
+  revocation flow belongs to `comparison-share-surface.md` and the main repo.
+- *Single-summary* share links may stay lightweight for the alpha (handoff §8); the
+  stronger gate is specific to the multi-buyer comparison.
+- *Unblocks* the comparison-share spec, and partially resolves handoff §9's re-share /
+  forwarding concern (the leak risk is addressed; the re-share UX is still downstream).
+
+---
+
+## DEC-8 — Default seller-priority dimensions and order
+
+**Date:** 2026-06-30 · **Status:** DECIDED · **Lives in:** `02-information-architecture/information-architecture.md` §7 (seller-priority profile) · `07-screen-design/comparison-view-plan.md` §5, §10
+
+**Context.** The comparison view ranks offers against a listing-scoped seller-priority
+profile (IA §7), seeded from agent presets. The profile's *dimensions* and their default
+priority order were not enumerated anywhere; the comparison matrix's columns are exactly
+these dimensions, so the screen spec needed them fixed.
+
+**Decision (Morris).** The default seller-priority dimensions, **in priority order**, are:
+**(1) net to seller, (2) contingencies, (3) financing strength, (4) close speed.** They
+are **user-controllable weights, not a fixed verdict** — the agent re-weights them to
+reflect this seller's priorities (doctrine §4.2). If a field that feeds a dimension is
+**unreadable or unverified, Docside suppresses that dimension rather than guessing**
+(doctrine §5; comparison-view-plan §4c).
+
+**Consequences.**
+- The dimensions map to high-stakes vocabulary fields and `HIGH_STAKES_FIELD_KEYS`
+  (cited, not forked — high-stakes-fields-pointer governance). "Net to seller" is an
+  arithmetic of traceable components (price − seller-paid costs), suppressed if any
+  component is unread (comparison-view-plan Fork I).
+- The at-rest "Ranked by…" basis line renders in this order (comparison-view-plan §4b).
+- To be formalized into IA §7 on the next IA bump.
+
+---
+
 ## Decisions to backfill
 
 Already locked inline across the specs; promote each to a full `DEC-n` entry as it

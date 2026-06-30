@@ -1,19 +1,16 @@
-# Plan — The Comparison View (screen-spec Plan 2.0)
+# Plan — The Comparison View (screen-spec Plan 2.1)
 
-> **Status:** v2.0 — plan. Revises v1.0 in response to an external review (ChatGPT)
-> of v1.0. This is the plan for writing `07-screen-design/comparison-view.md`, not the
-> spec. It is a **revision, not a rewrite**: every v1.0 section the review did not
-> challenge is retained (some renumbered); the additions are the data-state taxonomy
-> (§5), the expanded comparison-share plan with access control (§8), worked example
-> fixtures (§9), an open-questions-for-Morris section (§15), and a disposition +
-> changelog (§17). The whole remains specific enough to write the spec from without
-> further guidance.
-> **What changed and why:** see §17 (per-concern disposition + changelog). One-line
-> summary: v2.0 resolves comparison-share access control, plans the share surface as a
-> sibling with an inheritance table, tightens the data-state distinctions, adds mobile
-> Customize behavior and concrete fixtures, and separates what blocks `comparison-view.md`
-> (nothing — write it now) from what blocks the sibling share spec (access control —
-> Morris).
+> **Status:** v2.1 — plan. v2.0 revised v1.0 in response to an external review (ChatGPT);
+> **v2.1 incorporates Morris's decisions** on the two questions v2.0 flagged (§15):
+> comparison-share access control (**DEC-7**) and the default seller-priority dimensions
+> (**DEC-8**). This is the plan for writing `07-screen-design/comparison-view.md`, not the
+> spec. It remains a **revision, not a rewrite**: every v1.0/v2.0 section not superseded is
+> retained. The whole is specific enough to write the spec from without further guidance —
+> and with both former blockers resolved, **`comparison-view.md` can now be written.**
+> **What changed and why:** see §17 (per-concern disposition + changelog; §17.3 covers
+> v2.0 → v2.1). v2.0 added the data-state taxonomy (§5), the comparison-share brief (§8),
+> worked fixtures (§9), and the disposition (§17); **v2.1 locks access control and the
+> dimension set and propagates them throughout** (§4b, §8, §9, §10, §14, §15, §16).
 > **Derives from:** `NORTH-STAR.md`; `trust-doctrine.md` §2, §4, §5; `information-
 > architecture.md` §1, §2.1, §3–§5, §7; `critical-path.md` §3; `states-and-edge-cases.md`
 > §1, §3, §4, §4.1; `handoff.md` §2, §6, §7–§8; `verify-workspace.md` and
@@ -156,11 +153,11 @@ interaction."
 
 **Resolution — the "Ranked by" basis statement + a compact relative-weight indicator
 as the always-visible header; Customize expands it in place.**
-- **At rest:** a term-based, ordered **basis line** — *"Ranked by: highest net to
-  seller, fastest close, fewest contingencies"* (the phrasing already in handoff §7 and
-  seller-workflow §4) — paired with a **compact relative-weight indicator** (ordered
-  bars/chips, labeled by dimension, magnitude shown). It sits above the matrix as the
-  order's **declared basis**.
+- **At rest:** a term-based, ordered **basis line** in the DEC-8 default order — *"Ranked
+  by: highest net to seller, fewest contingencies, stronger financing, faster close"* (the
+  format echoes handoff §7 / seller-workflow §4; the order is the confirmed default, §10) —
+  paired with a **compact relative-weight indicator** (ordered bars/chips, labeled by
+  dimension, magnitude shown). It sits above the matrix as the order's **declared basis**.
 - **Customize** expands the header **in place** into the free-slider / live-total editor
   (doctrine §4.2) — the **same control at two widths** (verify's invariant).
 - **Default source:** the listing-scoped seller-priority profile, seeded from agent
@@ -400,7 +397,7 @@ decision, never the decision.*
 | §5 guarantee, Principle voice | absent (single offer; worked-specimen §2) | **NEW** → "If we cannot trace how a ranking was determined, we will not present it" |
 | Buyer identity | the one buyer (§1A) | **shows each buyer name (§1A)** to the seller (Q2); unreadable → fallback handle (states §4.1) |
 | Read-only; no acknowledgment; `tel:` call prompt; non-laundering prohibition list (DEC-6) | yes | **INHERITS**; the prohibition list **extends to the order** (no false decisive order, no hidden suppression) |
-| Access control | lightweight link acceptable for alpha (handoff §8) | **DIVERGES** → stronger; multi-buyer confidential (§8.3) |
+| Access control | lightweight link acceptable for alpha (handoff §8) | **DIVERGES** → email-gated recipient access, expiring + agent-revocable (DEC-7 / §8.3); a forward doesn't carry access |
 
 ### 8.2 How ranking reaches the seller (the governing decision)
 
@@ -411,41 +408,46 @@ room for what it can't see** (a buyer's letter, gut feel — seller-workflow §4
 is never the algorithm's"). This is a stronger obligation than the single-offer surface,
 which had no order to caveat.
 
-### 8.3 The access-control open decision *(review Major 1)*
+### 8.3 The access-control decision *(DECIDED by Morris — resolves review Major 1)*
 
-**The decision.** How a comparison share link is protected. A forwarded comparison link
+**The problem.** How a comparison share link is protected. A forwarded comparison link
 exposes **every competing buyer's price and terms** (handoff §7) — categorically worse
 than a single-summary leak, and email makes forwarding the norm (DEC-1 consequence).
 
-**Options** (the space from review Q1 + handoff §8):
+**DECIDED (Morris): a revocable, gated share link — email-gated recipient access with
+expiration and agent revocation.** Concretely: the agent enters **one or more seller
+recipient emails**; the recipient **verifies access through email**; the link **can
+expire**; the agent **can revoke** access at any time. A **forwarded** recipient who opens
+the link **does not automatically receive access** — they meet the same email gate. The
+comparison share is **not** a fully public, freely forwardable link.
 
-| Option | What it does | Trade-off |
-|---|---|---|
-| Free-forward tokenized link | anyone holding the link views it | **rejected** — multi-buyer confidentiality breach |
-| Revocable link | agent can kill the link later | handoff §8 baseline; doesn't stop a forward before revocation |
-| Expiring link | link dies after a window | limits exposure; seller may lose access mid-decision |
-| Email-gated / recipient-bound | viewer must verify the intended email | strongest forwarding resistance; adds seller friction |
-| PIN / passcode | shared secret to open | simple; the secret forwards with the link |
-| Per-view agent approval | agent approves each open | maximal control; maximal friction, breaks "open it cold on a phone" |
+**Options considered** (the space from review Q1 + handoff §8):
 
-**Risk.** A leaked comparison link is the highest-confidentiality failure on any Docside
-surface. It deserves the strongest treatment, balanced against the seller's "open it cold
-on a phone, no login" need (seller-workflow §0).
+| Option | Disposition |
+|---|---|
+| Free-forward tokenized link | **rejected** — a forward exposes every buyer's terms (multi-buyer breach) |
+| Revocable link | **adopted (part of the model)** — agent can kill the link later |
+| Expiring link | **adopted (part of the model)** — link dies after a window |
+| Email-gated / recipient-bound | **adopted (the core)** — recipient verifies via email; a forward doesn't carry access |
+| PIN / passcode | **rejected** — a PIN forwards as easily as the link |
+| Per-view agent approval | **rejected as the default** — too much friction; breaks "open it cold on a phone" |
 
-**Working assumption (so dependent specs are unblocked).** Comparison links are **not
-freely forwardable**: at minimum **revocable and gated** (email-gated or expiring), per
-handoff §8's recommendation. Single-summary links may stay lightweight for the alpha.
+**Why this balance.** Email-gating resists the forward-native leak (handoff §7) that PIN
+and free-forward links don't, while staying lighter than per-view approval — the seller
+still opens the link on their phone, just after a one-time email verification. Single-
+summary links may stay lightweight for the alpha (handoff §8); the stronger gate is
+specific to the multi-buyer comparison.
 
-**Critical scoping — this does NOT block `comparison-view.md`.** The agent workspace is
-**authenticated**; access control governs the **public share link**, i.e. the sibling
-`comparison-share-surface.md`. The workspace only needs to **reflect** the chosen posture
-in its "Share comparison" affordance (a placeholder: "this link applies the comparison-
-share access posture — see handoff §8"). So **`comparison-view.md` is unblocked; the
-comparison-share spec waits on the access mechanism.**
+**Scoping — this governs the public share, not `comparison-view.md`.** The agent workspace
+is **authenticated**; the access model governs the **public share link**, i.e. the sibling
+`comparison-share-surface.md`. The workspace **reflects** it in the "Share comparison"
+affordance: the agent **enters recipient emails** and sees the link is **expiring and
+revocable** — the share-initiation UI the workspace owns. The full recipient-verification,
+expiry, and revocation flow belongs to the comparison-share spec and the main repo.
 
-**Home + Morris-flag.** The final mechanism choice is **Morris's** (handoff §8: "Confirm
-before share ships"), recorded in handoff §8 and a comparison-share DEC (anticipated
-**DEC-12**, §14). Carried to §15.
+**Home.** Recorded as **DEC-7** (`11-design-decisions/decisions.md`) and at `handoff.md`
+§8 (resolving its standing open question). The main repo implements the email gate,
+expiry, and revocation.
 
 ### 8.4 Resolved share questions (from the docs)
 
@@ -473,9 +475,9 @@ before share ships"), recorded in handoff §8 and a comparison-share DEC (antici
 
 *Added in response to review Minor 2 and Suggested Change 5, and to serve Testing/DoD
 (§13). Illustrative data echoing the worked-specimen's style (not the ground-truth
-fixture); no CAR verbatim text. Three offers on one listing, ranked by: **highest net to
-seller, fastest close, fewest contingencies.** Net to seller (illustrative) = price −
-seller credit − seller-paid buyer-broker comp.*
+fixture); no CAR verbatim text. Three offers on one listing, ranked by the DEC-8 default
+order: **net to seller ▸ contingencies ▸ financing strength ▸ close speed.** Net to seller
+(illustrative) = price − seller credit − seller-paid buyer-broker comp.*
 
 **Cast.**
 - **Reyes** — $1,275,000 · 21-day close · no appraisal contingency · 17-day loan
@@ -487,11 +489,16 @@ seller credit − seller-paid buyer-broker comp.*
   buyer-broker comp 2.5%. Net = 1,250,000 − 31,250 = **$1,218,750**.
 
 **Fixture 1 — Clean ranking.** Chen's comp reads as a flat $26,000 → Chen net =
-$1,274,000. On the weighted basis the order is **Chen ▸ Reyes ▸ Okafor**. The matrix
-shows each term per dimension; leading cells marked (Chen leads net; Okafor leads close
-and contingencies). Pairwise delta on Chen vs. Reyes: *"Ranked above Reyes on: higher net
-(+$36k), no loan contingency; Reyes leads on: faster close (21 vs 30 days)."* No score
-anywhere; financing dimension is **N/A** for all-cash Okafor (shown N/A, not a gap).
+$1,274,000. With net the top-weighted dimension, the order is **Chen ▸ Reyes ▸ Okafor**.
+The matrix shows each term per dimension; leading cells marked (Chen leads net; Okafor
+leads contingencies, financing, and close). Pairwise delta on Chen vs. Reyes: *"Ranked
+above Reyes on: higher net (+$36k), stronger financing (no loan contingency vs. a 17-day
+loan contingency); even on contingencies; Reyes leads on: faster close (21 vs 30 days)."*
+No score anywhere. All-cash Okafor sweeps contingencies / financing / close but trails on
+net — a clean illustration that the **top weight decides** while the delta still names
+every dimension honestly. (On the *financing-strength dimension*, all-cash is the
+strongest value, not a gap; the financing *detail* fields — loan amount, type — are the
+ones that read *not-applicable* for an all-cash offer, §5.1.)
 
 **Fixture 2 — Suppressed dimension.** Chen's buyer-broker comp reads incoherently
 (`PCT-OR-FLAT` conflict) → `null` → **unreadable**. Net depends on comp → Chen's **net
@@ -508,33 +515,36 @@ inverted-ranking guarantee in pixels.
 
 **Fixture 4 — Tie / near-tie.** All fields read; Reyes and Chen land within the closeness
 band on the weighted priorities. They render as a **near-tie band**: *"Reyes and Chen are
-very close on your priorities."* Pairwise delta: *"Nearly even — Reyes leads on close,
-Chen leads on net; it's close."* No manufactured decisive order.
+very close on your priorities."* Pairwise delta: *"Nearly even — Chen leads on net and
+financing, Reyes leads on close, even on contingencies; it's close."* No manufactured
+decisive order.
 
 **Fixture 5 — N = 1.** The reconciliation gate flagged Chen's emailed copy as a duplicate
 of an uploaded Chen; the agent dropped one, and Okafor was excluded as a backup → only
 Reyes remains. The comparison view **falls back to Reyes's single-offer summary** with
 *"Only one offer is in this comparison"* — no ranking chrome, no weighting header.
 
-**Fixture 6 — Forwarded seller share.** The seller forwards the comparison link to an
-adult child. Under the **working assumption** (§8.3 — revocable + gated), the forward
-either prompts recipient verification or honors the chosen posture; an over-shared link
-the agent can **revoke**. What the recipient sees on the seller surface: **buyer names**
-(Reyes/Chen/Okafor), the **"Ranked by…" basis line**, any **suppressed dimension
-visible-but-excluded**, the **§5 guarantee in Principle voice**, **no scores, no
-"accept."** This fixture exercises Q1–Q4 together and is the comparison-share spec's
-acceptance case.
+**Fixture 6 — Forwarded seller share.** The agent shared the comparison to the seller's
+verified email (DEC-7). The seller forwards the link to an adult child. Because access is
+**email-gated**, the forwarded recipient **does not automatically get in** — opening the
+link puts them against the same email gate, not the comparison; the agent can also
+**revoke** the link or let it **expire**. The verified seller, on the seller surface,
+sees: **buyer names** (Reyes/Chen/Okafor), the **"Ranked by…" basis line**, any
+**suppressed dimension visible-but-excluded**, the **§5 guarantee in Principle voice**,
+**no scores, no "accept."** This fixture exercises DEC-7 plus the resolved share questions
+(§8.4) and is the comparison-share spec's acceptance case.
 
 ---
 
 ## 10. Assumptions (things this plan depends on that the docs don't settle)
 
-- **The seller-priority dimension set is small and named.** IA §7 locks that the profile
-  is listing-scoped and preset-seeded, but the **actual dimensions** (net, close speed,
-  contingencies, financing strength, …) and their mapping to vocabulary fields are
-  enumerated nowhere. The matrix columns *are* these dimensions. *The spec will likely
-  propose a default set* grounded in the high-stakes vocabulary fields and
-  `HIGH_STAKES_FIELD_KEYS` (not invented metrics), marked "to confirm" — see §15.
+- **The seller-priority dimension set is confirmed** *(DECIDED by Morris — DEC-8)*. The
+  default dimensions, **in priority order**, are **(1) net to seller, (2) contingencies,
+  (3) financing strength, (4) close speed** — listing-scoped, seeded from agent presets
+  (IA §7), and **user-controllable weights, not a fixed verdict**. They map to the
+  high-stakes vocabulary fields and `HIGH_STAKES_FIELD_KEYS` (cited, not forked). An
+  unreadable or unverified field **suppresses** its dimension rather than guessing (4c).
+  The matrix columns *are* these dimensions, in this default order.
 - **The main repo can support accountable ranking:** produce an order from a weighting,
   expose **which terms drove each position** (4a), and **suppress / withhold** when a
   field is unread (4c). Per doctrine §5's DEFER-LINE, the last is **not yet generalized** —
@@ -568,12 +578,12 @@ acceptance case.
   name the dependency; if the backend can only *flag* (not *withhold*) at alpha, tier 3
   degrades from "withhold" to "flag as partial" — **doctrine-bound, escalate** (§14), not
   a silent edit.
-- **Access-control under-resolution** *(strengthened in v2.0, review Operational Risk).*
-  A leaked comparison link is the product's highest-confidentiality failure (multi-buyer
-  exposure, handoff §7). *Lever:* the working assumption (§8.3 — not freely forwardable,
-  revocable + gated) lets dependent specs proceed; the **comparison-share spec does not
-  ship until Morris locks the mechanism** (§15). `comparison-view.md` is unaffected
-  (authenticated).
+- **Access-control** *(was a v2.0 risk; now resolved — DEC-7).* A leaked comparison link
+  is the product's highest-confidentiality failure (multi-buyer exposure, handoff §7).
+  *Resolution:* the access model is decided (§8.3, DEC-7 — email-gated recipient access,
+  expiring, agent-revocable; a forward doesn't carry access). The **comparison-share spec**
+  owns the recipient-verification / expiry / revocation flow and the **main repo**
+  implements it; `comparison-view.md` is unaffected (authenticated).
 - **Net-to-seller is a ranking-moving number** (Fork I) — the §5 danger zone. *Lever:*
   net suppresses (visible-but-excluded) whenever any component is unread; if even that is
   too risky for alpha, fall back to components-only (lose legibility, keep safety).
@@ -671,8 +681,9 @@ A reviewer runs the finished spec against this checklist.
       (organizing idea, weighting, suppression-to-seller, §5 guarantee, access) present.
 - [ ] Ranking reaches the seller **as input, not verdict** (no "best offer," no "accept,"
       no score); the basis line is shown; suppression is visible to the seller.
-- [ ] Access posture reflected in the workspace's share affordance; the mechanism is
-      flagged for Morris (§15), not silently assumed.
+- [ ] Access posture (DEC-7 — email-gated, expiring, revocable) reflected in the
+      workspace's "Share comparison" affordance (agent enters recipient emails; link is
+      expiring + revocable); the full gate flow belongs to the comparison-share spec.
 
 **The two governing tests**
 - [ ] **Doctrine §7:** more *trustworthy* (legible order, honest weighting, honest gaps),
@@ -697,18 +708,20 @@ left in place — `decisions.md` convention), a **status/version bump** on
 `comparison-view.md`, and revision of only the citing sections. Separability (layout C/D
 ≠ legibility G ≠ suppression 4c ≠ net I) keeps one reversal from cascading.
 
-**First DEC entries expected when the spec is drafted** *(added in v2.0 — review Minor 5 /
-Suggested Change 7; numbers coordinate with any `decisions.md` backfill so they don't
-collide):*
+**DEC entries — two locked now (Morris), the rest expected when the spec is drafted.**
+*Numbers are assigned in lock order; the two Morris decisions lock before the spec, so they
+take DEC-7/DEC-8 and the spec-time forks shift to DEC-9 onward (coordinate with any
+`decisions.md` backfill so they don't collide).*
 
-| DEC | Decision | Fork / §  |
-|---|---|---|
-| **DEC-7** | Comparison layout model — matrix + ranked spine, offers-as-rows | C, D |
-| **DEC-8** | Weighting visibility — basis line + compact weights at rest; Customize expands; weights-shown/sub-scores-never | F, 4b |
-| **DEC-9** | Suppression / inverted-ranking behavior — cell → position (visible-but-excluded) → withheld order | 4c |
-| **DEC-10** | Net to seller — computed when all components traceable, else suppressed visible-but-excluded | I |
-| **DEC-11** | Legibility affordance — matrix at rest + pairwise delta | G, 4a |
-| **DEC-12** | Comparison-share access posture — *in the comparison-share spec, once Morris decides* | §8.3 |
+| DEC | Decision | Status | Fork / § |
+|---|---|---|---|
+| **DEC-7** | Comparison-share access — email-gated recipient access, expiring + agent-revocable; not public/forwardable; PIN and per-view-default rejected | **LOCKED (Morris)** | §8.3 |
+| **DEC-8** | Default seller-priority dimensions & order — net to seller ▸ contingencies ▸ financing strength ▸ close speed; user-controllable; suppress-on-unreadable | **LOCKED (Morris)** | §5, §10 |
+| **DEC-9** | Comparison layout model — matrix + ranked spine, offers-as-rows | expected | C, D |
+| **DEC-10** | Weighting visibility — basis line + compact weights at rest; Customize expands; weights-shown/sub-scores-never | expected | F, 4b |
+| **DEC-11** | Suppression / inverted-ranking behavior — cell → position (visible-but-excluded) → withheld order | expected | 4c |
+| **DEC-12** | Net to seller — computed when all components traceable, else suppressed visible-but-excluded | expected | I |
+| **DEC-13** | Legibility affordance — matrix at rest + pairwise delta | expected | G, 4a |
 
 **The mockup is the revision trigger.** Lock forks → mockup → if a fork fails, supersede
 its DEC and revise; the mockup review uses §13 as its checklist.
@@ -732,19 +745,19 @@ apply-then, esp. mobile). On any lock/reversal, update **`STATUS.md`** and **`de
 
 Separating what blocks **`comparison-view.md`** from what blocks the **sibling specs**:
 
-**Hard blockers for `comparison-view.md` (the agent workspace): none.** With the working
-assumptions and the proposed dimension set below, the spec can be written now. The items
-below are confirmations and sibling-spec blockers.
+**Hard blockers for `comparison-view.md` (the agent workspace): none — and the two items
+v2.0 flagged for Morris are now resolved.** The spec can be written now; the remaining
+items are cross-repo dependencies that affect the mockup, not the writing.
 
-1. **Comparison-share access-control mechanism** *(Morris — blocks the comparison-SHARE
-   spec, not `comparison-view.md`).* Working assumption: not freely forwardable; revocable
-   + gated (email-gated or expiring), per handoff §8. Morris picks the mechanism
-   (email-gate / expiry / recipient-bind / PIN / approval). **Home:** handoff §8 →
-   comparison-share DEC-12. The workspace proceeds with a placeholder share affordance.
-2. **The default seller-priority dimension set** *(confirm — soft, not a hard block).* The
-   spec **proposes** a small default set (net to seller, close speed, contingencies,
-   financing strength) grounded in `domain-vocabulary.md` + `HIGH_STAKES_FIELD_KEYS`,
-   marked "to confirm." Morris/IA confirms or amends. **Home:** IA §7 / spec Phase 1.
+1. **Comparison-share access-control mechanism** — **✅ RESOLVED (Morris, DEC-7).**
+   Email-gated recipient access with expiration and agent revocation; not public/
+   forwardable; a forward doesn't carry access; PIN and per-view-approval rejected (§8.3).
+   This blocked the comparison-SHARE spec, not `comparison-view.md`; the workspace's share
+   affordance now has a real posture to reflect (enter recipient emails; expiring +
+   revocable). **Home:** handoff §8 / DEC-7. The main repo implements the gate.
+2. **The default seller-priority dimension set** — **✅ RESOLVED (Morris, DEC-8).**
+   Net to seller ▸ contingencies ▸ financing strength ▸ close speed; user-controllable
+   weights; suppress-on-unreadable (§10). **Home:** IA §7 / DEC-8 / spec Phase 1.
 3. **The §5 generalization state in the main repo** *(cross-repo dependency, not a design
    decision).* 4c assumes the read-failure path degrades to *unknown* (suppress/withhold),
    not to a ranking-moving default, for comparison-affecting fields. Today only §3G(3) is
@@ -768,8 +781,11 @@ below are confirmations and sibling-spec blockers.
   `07-screen-design/reconciliation-gate.md`.
 - **The comparison mockup and worked-specimen** (the §9 fixtures seed the latter) → home:
   Phase 8.
-- **Link access-control mechanism** → home: handoff §8 / Morris (§15).
-- **The default dimension set's final membership** → home: IA §7 / spec Phase 1 (§15).
+- **Link access-control mechanism** — **decided** (DEC-7, §8.3); the recipient-
+  verification / expiry / revocation *implementation* → the comparison-share spec + main
+  repo.
+- **The default dimension set's membership & order** — **decided** (DEC-8, §10);
+  formalizing it into IA §7 → next IA bump / spec Phase 1.
 - **Visual design tokens** → home: brand adoption (assets/README).
 
 ---
@@ -782,7 +798,7 @@ below are confirmations and sibling-spec blockers.
 
 | # | Concern | Disposition | Where addressed |
 |---|---|---|---|
-| 1 | Access control under-resolved | **Accept** | §8.3 (options, risk, working assumption, home), §11 (strengthened risk), §15 #1 (Morris-flag). Correctly scoped: blocks the share sibling, **not** `comparison-view.md`. |
+| 1 | Access control under-resolved | **Accept** | §8.3 (options, risk, home — now **DECIDED, DEC-7**), §11, §15 #1 (resolved). Correctly scoped: blocks the share sibling, **not** `comparison-view.md`. |
 | 2 | Share surface seeded but under-planned | **Accept** | §8 rewritten as a full sibling brief with the §8.1 inheritance/divergence table. |
 | 3 | Data-state distinctions need tightening | **Accept** (with one grounded partial-reject) | §5 taxonomy (field-level × ranking/disclosure; offer-level verification state). **Partial reject:** "intentionally omitted" is not a claimable state — asserting intent violates copy §4 / `DEFAULT-TRAP` (§5.1 rule a). |
 
@@ -794,7 +810,7 @@ below are confirmations and sibling-spec blockers.
 | 2 | Suppression needs examples | **Accept** | §9 fixtures 2–3; referenced from 4c. |
 | 3 | Define what's visible instead of sub-scores | **Accept** | §4b "what is visible instead of a sub-score" (6-item list). |
 | 4 | Net suppression display behavior | **Accept** | §4c + Fork I: **visible-but-excluded, never disappears**; generalized as a rule. |
-| 5 | Which decisions become DEC entries | **Accept** | §14 "first DEC entries" table (DEC-7…DEC-12). |
+| 5 | Which decisions become DEC entries | **Accept** | §14 DEC table (DEC-7…DEC-13; DEC-7/8 now locked by Morris). |
 
 **Suggested changes** map onto the above: 1→§8.3; 2→§8.1; 3→§5; 4→§12; 5→§9; 6→§6
 altitude discipline + §13 cross-repo check; 7→§14. **All accepted.**
@@ -842,3 +858,21 @@ altitude discipline + §13 cross-repo check; 7→§14. **All accepted.**
   retained (the organizing idea, the two-doc split, the gate-as-sibling decision, all
   fork resolutions, the doctrine-TODO resolutions, the §7/NORTH-STAR tests). This is a
   revision, not a rewrite. *(Requirement 4.)*
+
+### 17.3 v2.0 → v2.1 (Morris decisions incorporated)
+
+Morris resolved the two §15 open questions; v2.1 propagates them and bumps the status
+line. No v2.0 content was reversed — the two items moved from "flagged for Morris" to
+"locked."
+
+- **DEC-7 — comparison-share access control.** Email-gated recipient access with
+  expiration and agent revocation; not public/forwardable; a forward doesn't carry access;
+  PIN and per-view-approval rejected. Propagated to §8.1 (access row), §8.3 (now DECIDED,
+  options dispositioned), §9 (fixture 6), §14, §15 #1, §16. Recorded at `handoff.md` §8
+  and `11-design-decisions/decisions.md`.
+- **DEC-8 — default seller-priority dimensions & order.** Net to seller ▸ contingencies ▸
+  financing strength ▸ close speed; user-controllable; suppress-on-unreadable. Propagated
+  to §4b (basis-line example), §9 (basis line + fixture 1/4 deltas), §10, §14, §15 #2.
+  Recorded at `11-design-decisions/decisions.md` (to be formalized into IA §7 on the next
+  IA bump).
+- **Status** bumped to **v2.1**; title and header note updated.
