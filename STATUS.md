@@ -4,7 +4,7 @@
 > reflects the committed state and names what's next. When a section's state changes,
 > update the row here — this is the canonical status surface (the README's table can
 > point here rather than duplicate it).
-> **Last updated:** 2026-06-29
+> **Last updated:** 2026-06-30
 > **One-line state:** the design system is substantially complete through the screen
 > layer — foundations, trust specs, IA, both workflows, the handoff, two of four
 > screens, and a started decision log are all written and committed. Two screens, user
@@ -29,7 +29,7 @@
 | `08-states-and-edge-cases/` | states-and-edge-cases | v0.3 | ✅ written |
 | `09-component-library/` | — | — | ⛔ stub (awaits more screens + brand adoption) |
 | `10-copy-guidelines/` | copy-guidelines · worked-specimen | v0.2 / v0.1 | ✅ written |
-| `11-design-decisions/` | decisions (DEC-1 … DEC-6) | v0.1 | ◑ started (≈9 more indexed to backfill) |
+| `11-design-decisions/` | decisions (DEC-1 … DEC-8) | v0.1 | ◑ growing (DEC-7/8 added; ≈9 more indexed to backfill) |
 | `_templates/` | screen-spec-template | v0.1 | ✅ one template |
 | `assets/` | pointer to external brand files | — | pointer only |
 
@@ -46,6 +46,10 @@
 - **DEC-2…DEC-6** — the five share-surface forks (headline leads · §-citation
   always-visible inline · high-stakes unknowns at elevated weight · glosses always-on ·
   the non-laundering prohibition list).
+- **DEC-7** — Comparison-share access control: email-gated recipient access, expiring +
+  agent-revocable (resolves the handoff §8 open question).
+- **DEC-8** — Default seller-priority dimensions & order: net to seller ▸ contingencies ▸
+  financing strength ▸ close speed; user-controllable; suppress-on-unreadable.
 
 An index of ~9 earlier locked decisions sits below them, to promote to full entries as
 each comes up for review (the central IA decision, the reconciliation gate, the
@@ -56,6 +60,9 @@ correction/audit clause, the verify-workspace forks, etc.).
 ## What's next
 
 **Recommended: the comparison-view screen spec** (`07-screen-design/comparison-view.md`).
+Its plan is written and current — `07-screen-design/comparison-view-plan.md` (**v2.1**),
+which incorporated an external review and Morris's decisions (DEC-7 access control, DEC-8
+default dimensions). Both former blockers are resolved, so the spec is ready to write.
 
 Every screen built so far — verify and share — lives on the doctrine's
 *understanding-trust* surface (a single offer, made clear). The comparison view is the
