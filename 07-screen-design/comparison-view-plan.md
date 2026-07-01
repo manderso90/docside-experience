@@ -8,7 +8,11 @@
 > **What this file is:** the writing guide for `comparison-view.md` (the
 > comparison-view screen spec). The plan is the brief; the spec is the artifact.
 >
-> **Does not replace:** `comparison-view.md` (the actual spec, not yet written).
+> **Executed:** `comparison-view.md` (v0.1) was written from this plan on 2026-06-30 —
+> template §0–§7 with the A–J content mapped in, the worked fixtures and the
+> comparison-share brief carried into its Appendices A and B, and Forks C–K locked as
+> DEC-9…DEC-17 (Forks A/B indexed for backfill). This plan is retained as the brief of
+> record; the spec is now the artifact.
 
 ---
 

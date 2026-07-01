@@ -6,9 +6,10 @@
 > point here rather than duplicate it).
 > **Last updated:** 2026-06-30
 > **One-line state:** the design system is substantially complete through the screen
-> layer — foundations, trust specs, IA, both workflows, the handoff, two of four
-> screens, and a started decision log are all written and committed. Two screens, user
-> research, and the component library remain; the brand identity and the
+> layer — foundations, trust specs, IA, both workflows, the handoff, three of four
+> screens, and a growing decision log are all written and committed. The comparison view
+> is now specced (all three ranking-trust `TODO(design)` markers resolved). One screen
+> (upload), user research, and the component library remain; the brand identity and the
 > static-provenance "hard column" are parked-but-live.
 
 ---
@@ -25,16 +26,17 @@
 | `04-agent-workflow/` | agent-workflow | v0.2 | ✅ written |
 | `05-seller-workflow/` | seller-workflow | v0.2 | ✅ written |
 | `06-handoff/` | handoff (form/channel + email delivery) | v0.2 | ✅ written |
-| `07-screen-design/` | verify-workspace **+ mockup** · share-surface | v0.2 / v0.1 | ◑ 2 of 4 screens |
+| `07-screen-design/` | verify-workspace **+ mockup** · share-surface · comparison-view | v0.2 / v0.1 / v0.1 | ◑ 3 of 4 screens |
 | `08-states-and-edge-cases/` | states-and-edge-cases | v0.3 | ✅ written |
 | `09-component-library/` | — | — | ⛔ stub (awaits more screens + brand adoption) |
 | `10-copy-guidelines/` | copy-guidelines · worked-specimen | v0.2 / v0.1 | ✅ written |
-| `11-design-decisions/` | decisions (DEC-1 … DEC-8) | v0.1 | ◑ growing (DEC-7/8 added; ≈9 more indexed to backfill) |
+| `11-design-decisions/` | decisions (DEC-1 … DEC-17) | v0.1 | ◑ growing (DEC-9…DEC-17 added for comparison; Forks A/B + ≈13 more indexed to backfill) |
 | `_templates/` | screen-spec-template | v0.1 | ✅ one template |
 | `assets/` | pointer to external brand files | — | pointer only |
 
 **Screens:** verify ✅ (spec + interactive mockup) · share ✅ (spec; no mockup) ·
-**upload ⛔ (not started)** · **comparison ⛔ (not started)**.
+comparison ✅ (spec; no mockup — mockup is the LOCK-pending-mockup trigger for Forks
+C/D, E, I) · **upload ⛔ (not started)**.
 
 ---
 
@@ -50,27 +52,36 @@
   agent-revocable (resolves the handoff §8 open question).
 - **DEC-8** — Default seller-priority dimensions & order: net to seller ▸ contingencies ▸
   financing strength ▸ close speed; user-controllable; suppress-on-unreadable.
+- **DEC-9…DEC-17** — the comparison-view forks: hybrid ranked-spine + matrix, offers as
+  rows (9) · basis line + Customize-expands-in-place (10) · three-tier suppression /
+  withheld order (11, runtime-dependent) · net computed-only-from-traceable-components,
+  else suppressed (12) · legibility = matrix + adjacent preview + pairwise delta (13) ·
+  live re-ranking, mobile→apply-then (14) · per-offer atom in a side pane/drill-down linked
+  to verify (15) · free-text "Other terms," never scored (16) · set-provisional marker (17).
+  DEC-9/12/14 are LOCK-pending-mockup.
 
-An index of ~9 earlier locked decisions sits below them, to promote to full entries as
-each comes up for review (the central IA decision, the reconciliation gate, the
-correction/audit clause, the verify-workspace forks, etc.).
+An index of earlier locked decisions sits below them (now including comparison Forks A/B —
+two-doc split, gate-as-sibling), to promote to full entries as each comes up for review
+(the central IA decision, the reconciliation gate, the correction/audit clause, the
+verify-workspace forks, etc.).
 
 ---
 
 ## What's next
 
-**Recommended: the comparison-view screen spec** (`07-screen-design/comparison-view.md`).
-Its plan is written and current — `07-screen-design/comparison-view-plan.md` (**v2.1**),
-which incorporated an external review and Morris's decisions (DEC-7 access control, DEC-8
-default dimensions). Both former blockers are resolved, so the spec is ready to write.
+**Done since last update: the comparison-view screen spec**
+(`07-screen-design/comparison-view.md`, v0.1) — written from the plan
+(`comparison-view-plan.md` v3.0), resolving all three ranking-trust `TODO(design)` markers
+(§4.1 legibility, §4.2 honest weighting, §5 inverted-ranking guarantee) and locking Forks
+C–K as DEC-9…DEC-17. The comparison view was the **only** screen exercising *ranking-trust*
+(the rest live on the *understanding-trust* surface), so this completes the design layer's
+coverage of both trust surfaces. Two follow-ons are now briefed but unwritten:
+`comparison-share-surface.md` (Appendix B of the spec) and `reconciliation-gate.md` (the
+upstream dependency).
 
-Every screen built so far — verify and share — lives on the doctrine's
-*understanding-trust* surface (a single offer, made clear). The comparison view is the
-**only** screen that exercises *ranking-trust*: legibility of order, honest weighting
-against seller priorities, and the **inverted-ranking guarantee** — the most
-product-specific guarantee in the doctrine, which exists *only* on this screen and has
-never been rendered. It is also the retention engine (NORTH-STAR's depth loop). Speccing
-it completes the design layer's coverage of both trust surfaces.
+**Recommended next: the comparison mockup** — it is the LOCK-pending-mockup trigger for
+Forks C/D (does the matrix read as a scoreboard?), E (live re-rank on mobile), and I (net
+suppression on a real packet). Blocked only on brand adoption for visual tokens.
 
 **Runner-up: the upload-flow spec** (`07-screen-design/upload-flow.md`) — completes the
 activation triad (upload → verify → share). Lower-risk, because its hard parts (ingestion
@@ -88,7 +99,7 @@ comparison follow.
 |---|---|---|
 | **Brand identity** | inspiration, not adopted (external; pointer in `assets/`) | every mockup, the component library, the verify-mockup reskin |
 | **Static-provenance "hard column"** | open — the source appendix is undesigned (DEC-3) | the future PDF-form spec (handoff §9); email-the-PDF |
-| **Link access-control model** | open decision (handoff §8) | safe share links once email/forwarding is in scope |
+| **Re-share / forwarding UX** | comparison-share access model decided (DEC-7); the re-invite / who-has-access *screen flow* is downstream | the comparison-share surface spec |
 
 ---
 
